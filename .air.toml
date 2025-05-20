@@ -1,0 +1,48 @@
+# Air config file
+
+# Working directory
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Voeg .exe toe aan de output voor Windows
+cmd = "go build -o ./tmp/webserver.exe ./cmd/webserver"
+# Gebruik de .exe extensie in de bin verwijzing
+bin = "./tmp/webserver.exe"
+# Bestanden die Air moet bekijken om veranderingen te detecteren
+include_ext = ["go", "html", "css", "js", "toml"]
+# Bestanden of mappen die moeten worden uitgesloten
+exclude_dir = ["tmp", "vendor", "node_modules"]
+# Bestanden die moeten worden uitgesloten
+exclude_file = []
+# Shell historie bestand
+delay = 1000 # ms
+# Druk de bestandsgrootte uit bij het volgen van veranderingen
+follow_symlink = false
+# Een aangepaste directory voor je binaries
+full_bin = ""
+# Voorbeeld: ga naar een aangepaste directory en voer elk commando uit
+# full_bin = "cd ./cmd/web && ./webserver"
+# Gebruikt voor ontaard (electronische) brieven
+kill_delay = "0s"
+# Handmatige polling van bestanden
+poll = false
+# Stopt de bouw als een fout optreedt
+stop_on_error = true
+# Sluit de machine af als een springsof niet meer dient
+send_interrupt = false
+
+[color]
+# Aangepaste kleuren voor gebruik in de console output
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[log]
+# Toon datum in logs
+time = true
+
+[misc]
+# Schoon oude binaries op 
+clean_on_exit = true

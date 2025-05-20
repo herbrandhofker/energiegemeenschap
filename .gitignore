@@ -1,0 +1,96 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build output
+web/static/css/output.css
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go specific
+tmp/
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output van Go coverage tool
+*.prof
+profile.cov
+
+# Log bestanden
+*.log
+
+# Dependency directories
+vendor/
+
+# Go specifieke bestanden
+*.o
+*.a
+
+# Output van Go coverage tool
+*.out
+
+# Binaire output directories
+/bin/
+/build/
+/dist/
+
+# IDE specifieke bestanden
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Tijdelijke bestanden
+tmp/
+temp/
+*.tmp
+
+# Build output
+target/
+
+# Debugging bestanden
+debug
+
+# Certificates
+*.pem
+*.key
+*.crt
+
+# Database bestanden
+*.db
+*.sqlite
+
+# Node.js gerelateerde bestanden
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Frontend build bestanden
+/web/static/dist/
+/web/static/build/
+
+# Project specifieke bestanden
+tibber.exe

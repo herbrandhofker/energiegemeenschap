@@ -1,0 +1,43 @@
+<div class="grid grid-cols-3 gap-2 text-sm">
+  <div class="font-semibold">Adres:</div>
+  <div class="col-span-2">{{ .Address.Address1 }}</div>
+
+  {{ if .Address.Address2 }}
+  <div class="font-semibold">Adres (vervolg):</div>
+  <div class="col-span-2">{{ .Address.Address2 }}</div>
+  {{ end }}
+
+  <div class="font-semibold">Postcode:</div>
+  <div class="col-span-2">{{ .Address.PostalCode }}</div>
+
+  <div class="font-semibold">Plaats:</div>
+  <div class="col-span-2">{{ .Address.City }}</div>
+
+
+  <div class="font-semibold">App Nickname:</div>
+  <div class="col-span-2">
+    {{ if .AppNickname }}{{ .AppNickname }}{{ else }}-{{ end }}
+  </div>
+
+
+  <div class="font-semibold">Verbruik EAN:</div>
+  <div class="col-span-2">{{ .MeteringPointData.ConsumptionEan }}</div>
+
+  {{ if .MeteringPointData.ProductionEan }}
+  <div class="font-semibold">Productie EAN:</div>
+  <div class="col-span-2">{{ .MeteringPointData.ProductionEan }}</div>
+  {{ end }}
+
+ 
+
+  <div class="font-semibold">Functionaliteiten:</div>
+  <div class="col-span-2">
+    <div class="flex flex-wrap gap-1">
+      {{ if .Features.RealTimeConsumptionEnabled }}
+      <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+        >Realtime verbruik</span
+      >
+      {{ end }}  
+    </div>
+  </div>
+</div>

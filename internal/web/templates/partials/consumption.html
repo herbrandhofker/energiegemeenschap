@@ -1,0 +1,158 @@
+<!-- Als niet actief, toon een standaard bericht -->
+{{ if not .IsActive }}
+<div class="card p-4 bg-gray-50 shadow-sm rounded-lg" id="consumption-section">
+  <div class="flex items-center justify-center p-4">
+    <span class="text-gray-500">{{ .Message }}</span>
+  </div>
+</div>
+{{ else }}
+
+<!-- Als wel actief, toon de consumptiegegevens -->
+<div class="card p-4 bg-white shadow-sm rounded-lg" id="consumption-section">
+  <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-3">
+    <svg
+      class="w-5 h-5 mr-2 text-yellow-500"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+    >
+      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+    Energieverbruik
+  </h2>
+
+  <!-- Samenvattingsboxen -->
+  <div class="grid grid-cols-2 gap-4 mb-3">
+    <div class="summary-box">
+      <span class="summary-label">Verbruik</span>
+      <div class="summary-value">
+        {{ if .TotalConsumption }}{{ printf "%.2f" .TotalConsumption }}{{ else }}0.0{{ end }} kWh
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <span class="summary-label">Kosten</span>
+      <div class="summary-value">
+        € {{ if .TotalCost }}{{ printf "%.2f" .TotalCost }}{{ else }}0.0{{ end }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Grafiek -->
+  <div id="consumption-chart" class="chart consumption-chart"></div>
+</div>
+
+<script>
+  fetch("/api/consumption/{{ .HomeId }}")
+    .then((response) => {
+      if (response.status === 404) {
+        document.getElementById("consumption-chart").innerHTML =
+          "<p class='text-center text-gray-500'>Geen verbruiksgegevens beschikbaar</p>";
+        throw new Error("no_data_available");
+      }
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (!data.dates || data.dates.length === 0) {
+        document.getElementById("consumption-chart").innerHTML =
+          "<p class='text-center text-gray-500'>Geen verbruiksgegevens beschikbaar</p>";
+        return;
+      }
+
+      const parsedDates = parseDateStrings(data.dates);
+
+      const chart = c3.generate({
+        bindto: "#consumption-chart",
+        data: {
+          x: "x",
+          columns: [
+            ["x", ...parsedDates],
+            ["verbruik", ...data.consumption],
+            ["kosten", ...data.cost],
+          ],
+          axes: {
+            verbruik: "y",
+            kosten: "y2",
+          },
+          types: {
+            verbruik: "bar",
+            kosten: "step",
+          },
+          colors: {
+            verbruik: "#17a3b8",
+            kosten: "#fd7e14",
+          },
+        },
+        axis: {
+          x: {
+            type: "timeseries",
+            tick: {
+              format: function(x) {
+                const options = { day: 'numeric', month: 'short' };
+                return x.toLocaleDateString('nl-NL', options).replace('.', '');
+              },
+              rotate: -45,
+              multiline: false,
+              count: 7,
+            },
+          },
+          y: {
+            min: 0,
+            padding: {
+              bottom: 0,
+            },
+            label: {
+              text: "Verbruik (kWh)",
+              position: "outer-middle",
+            },
+          },
+          y2: {
+            min: 0,
+            padding: { bottom: 0 },
+            label: {
+              text: "Kosten",
+              position: "outer-middle",
+            },
+            show: true,
+          },
+        },
+        point: {
+          r: 0,
+          focus: { expand: { r: 4 } },
+        },
+        grid: {
+          y: { show: true },
+          x: { show: true },
+        },
+        tooltip: {
+          format: {
+            title: function (d) {
+              return d.toLocaleDateString("nl-NL", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              });
+            },
+            value: function (value, ratio, id) {
+              if (id === "verbruik") return value.toFixed(2) + " kWh";
+              if (id === "kosten") return "€" + value.toFixed(2);
+              return value;
+            },
+          },
+        },
+        padding: {
+          right: 50,
+        },
+        legend: {
+          position: "bottom",
+        },
+      });
+    })
+    .catch((error) => {
+      console.error("Error loading consumption data:", error);
+    });
+</script>
+{{ end }}

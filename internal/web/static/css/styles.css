@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb;
+  --secondary: #17a3b8;
+  --dark: #343a40;
+}
+
+body {
+  background-color: #f5f7fa;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-md p-4 mb-4;
+}
+
+/* Chart headers styling */
+.card h2 {
+  @apply text-sm text-gray-600 font-medium mb-2 flex items-center gap-2;
+}
+
+.card h2 svg {
+  @apply w-3 h-3;
+}
+
+/* Summary boxes styling */
+.summary-box {
+  @apply bg-gray-50 border border-gray-100 rounded-md p-2;
+}
+
+.summary-label {
+  @apply text-xs text-gray-500 font-normal uppercase tracking-wide;
+}
+
+.summary-value {
+  @apply text-xs font-normal text-gray-600 mt-0.5;
+}
+
+.price-card {
+  @apply flex flex-col;
+}
+
+.price-current {
+  @apply text-xs font-normal text-primary mb-1;
+}
+
+.price-box {
+  @apply bg-gray-100 rounded-md px-2 py-1.5 mb-2;
+}
+
+.price-box.very-cheap {
+  @apply bg-green-100 border-l-4 border-green-500;
+}
+
+.price-box.cheap {
+  @apply bg-blue-100 border-l-4 border-blue-500;
+}
+
+.price-box.normal {
+  @apply bg-yellow-100 border-l-4 border-yellow-500;
+}
+
+.price-box.expensive {
+  @apply bg-orange-100 border-l-4 border-orange-500;
+}
+
+.price-box.very-expensive {
+  @apply bg-red-100 border-l-4 border-red-500;
+}
+
+.chart {
+  height: 350px;
+  margin-bottom: 1rem;
+}
+
+/* Chart Styling */
+.c3-line {
+  stroke-width: 2.5px !important;
+}
+
+.c3-bar {
+  stroke: rgba(0, 0, 0, 0.05);
+  stroke-width: 0.5px;
+}
+
+.c3-tooltip-container {
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.c3-grid line {
+  stroke: #e5e7eb;
+  stroke-width: 1px;
+}
+
+.c3-axis-y text,
+.c3-axis-y2 text {
+  font-size: 11px;
+}
+
+.c3-legend-item text {
+  font-size: 12px;
+}
+
+/* Current time indicator */
+.current-time line {
+  stroke: #ef4444;
+  stroke-width: 4;
+  stroke-dasharray: 8, 4;
+  z-index: 100;
+}
+
+.current-time text {
+  fill: #ef4444;
+  font-weight: bold;
+  font-size: 14px;
+  filter: drop-shadow(0px 0px 2px white);
+}
+
+/* Day separator */
+.day-separator line {
+  stroke: #4b5563;
+  stroke-width: 1;
+  stroke-dasharray: 5, 3;
+}
+
+.day-separator text {
+  fill: #4b5563;
+  font-weight: bold;
+}
+
+/* Chart-specific colors */
+.price-chart .c3-area-prijs {
+  fill: #3b82f6 !important;
+  opacity: 0.25;
+}
+
+#price-chart .c3-region.current-hour {
+  fill: #34d399 !important;
+  opacity: 0.8 !important;
+}
+
+.consumption-chart .c3-bar-verbruik {
+  fill: #60a5fa !important;
+}
+
+.consumption-chart .c3-line-kosten {
+  stroke: #f97316 !important;
+}
+
+.production-chart .c3-bar-productie {
+  fill: #fbbf24 !important;
+}
+
+.production-chart .c3-line-opbrengst {
+  stroke: #10b981 !important;
+}
+
+/* Home details modal */
+#home-details-modal {
+  transition: opacity 0.2s ease-in-out;
+}
+
+#home-details-modal .grid {
+  border-collapse: collapse;
+}
+
+#home-details-modal .font-semibold {
+  color: #4b5563;
+}
+
+#home-details-modal .grid>div {
+  padding: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#home-details-modal .grid>div:last-child,
+#home-details-modal .grid>div:nth-last-child(2) {
+  border-bottom: none;
+}

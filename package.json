@@ -1,0 +1,11 @@
+{
+  "name": "energy-dashboard",
+  "version": "1.0.0",
+  "description": "Energy Dashboard",
+  "scripts": {
+    "build:css": "tailwindcss -i ./internal/web/static/css/styles.css -o ./internal/web/static/css/output.css --watch"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

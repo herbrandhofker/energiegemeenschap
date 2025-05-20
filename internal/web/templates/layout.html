@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ .Title }}</title>
+
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/output.css" />
+
+    <!-- JavaScript daarna -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js"></script>
+  </head>
+  <body class="min-h-screen">
+    <header class="bg-primary text-white p-4">
+      <div class="container mx-auto flex items-center justify-center relative">
+        <!-- Home selector of label - links gepositioneerd -->
+        {{ if .Homes }}
+        <div class="absolute left-0 flex items-center">
+          {{ if eq (len .Homes) 1 }}
+          <!-- Eén huis: toon label met info-knop -->
+          <div
+            class="bg-primary-dark text-white px-4 py-2 rounded-md border border-primary-light flex items-center"
+          >
+            <span>{{ (index .Homes 0).Address.Address1 }}</span>
+            <button
+              id="home-info-button"
+              class="ml-2 text-white bg-primary-light hover:bg-blue-600 rounded-full w-5 h-5 flex items-center justify-center focus:outline-none"
+              aria-label="Toon huisgegevens"
+              title="Toon huisgegevens"
+              onclick="showHomeDetails('{{ (index .Homes 0).Id }}')"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+          {{ else }}
+          <!-- Meerdere huizen: toon selector -->
+          <select
+            id="home-select"
+            class="bg-primary text-white px-4 py-2 rounded-md border border-primary-light focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            {{ range .Homes }}
+            <option value="{{ .Id }}">{{ .Address.Address1 }}</option>
+            {{ end }}
+          </select>
+          {{ end }}
+        </div>
+        {{ end }}
+
+        <!-- Titel - gecentreerd -->
+        <h1 class="text-2xl font-bold text-center">{{ .Title }}</h1>
+      </div>
+    </header>
+
+    <!-- Home details modal (verborgen standaard) -->
+    <div
+      id="home-details-modal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50"
+    >
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+        <button
+          onclick="closeHomeDetails()"
+          class="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+        <h2 id="modal-title" class="text-xl font-bold mb-4">Huisgegevens</h2>
+        <div id="modal-content" class="space-y-3">
+          <!-- Home gegevens worden hier dynamisch geladen -->
+        </div>
+        <button
+          onclick="closeHomeDetails()"
+          class="mt-6 bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark w-full"
+        >
+          Sluiten
+        </button>
+      </div>
+    </div>
+
+    <main class="container mx-auto p-4">
+      {{ if .Homes }}
+      <!-- Live Data Section -->
+      {{ template "live_data" . }}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Price Card -->
+        <div
+          id="price-section"
+          hx-get="/partials/price/{{ (index .Homes 0).Id }}"
+          hx-trigger="load"
+          hx-target="#price-section"
+          class="card animate-pulse"
+        >
+          <div class="flex justify-center items-center h-32">
+            <svg
+              class="w-12 h-12 text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <p class="text-center text-gray-500">Loading price data...</p>
+        </div>
+
+        <!-- Consumption Card -->
+        <div
+          id="consumption-section"
+          hx-get="/partials/consumption/{{ (index .Homes 0).Id }}"
+          hx-trigger="load"
+          hx-target="#consumption-section"
+          class="card animate-pulse"
+        >
+          <div class="flex justify-center items-center h-32">
+            <svg
+              class="w-12 h-12 text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+          </div>
+          <p class="text-center text-gray-500">Loading consumption data...</p>
+        </div>
+
+        <!-- Production Card -->
+        <div
+          id="production-section"
+          hx-get="/partials/production/{{ (index .Homes 0).Id }}"
+          hx-trigger="load"
+          hx-target="#production-section"
+          class="card animate-pulse"
+        >
+          <div class="flex justify-center items-center h-32">
+            <svg
+              class="w-12 h-12 text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+          </div>
+          <p class="text-center text-gray-500">Loading production data...</p>
+        </div>
+      </div>
+      {{ else }}
+      <div class="card">
+        <p class="text-center text-gray-600">
+          Geen huisgegevens gevonden. Controleer uw Tibber API verbinding.
+        </p>
+      </div>
+      {{ end }}
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+      <div class="container mx-auto text-center">
+        <p>Enlightened Services &copy; 2025</p>
+      </div>
+    </footer>
+
+    <!-- Alle JavaScript verenigd in één sectie -->
+    <script>
+      // ==================================================
+      // Datum parsing functionaliteit
+      // ==================================================
+      function parseDateStrings(dateStrings) {
+        return dateStrings.map((dateStr) => {
+          // Log om te debuggen
+          console.log("Parsing:", dateStr);
+
+          // Als dateStr het formaat "15 mei" heeft, voeg het jaar toe
+          if (dateStr.match(/^\d{1,2} [a-zA-Z]{3}$/)) {
+            const currentYear = new Date().getFullYear();
+            // Expliciet Nederlands formaat parsen
+            const parts = dateStr.split(" ");
+            const day = parseInt(parts[0], 10);
+
+            // Maanden mapping
+            const dutchMonths = {
+              jan: 0,
+              feb: 1,
+              mrt: 2,
+              apr: 3,
+              mei: 4,
+              jun: 5,
+              jul: 6,
+              aug: 7,
+              sep: 8,
+              okt: 9,
+              nov: 10,
+              dec: 11,
+            };
+
+            const month = dutchMonths[parts[1].toLowerCase()];
+            if (month === undefined) {
+              console.error("Invalid month:", parts[1]);
+            }
+
+            // Maak een datum met UTC tijd op 12:00
+            const result = new Date(
+              Date.UTC(currentYear, month, day, 12, 0, 0)
+            );
+            console.log("Parsed date:", result);
+            return result;
+          }
+
+          // Anders normaal parsen
+          const result = new Date(dateStr);
+          console.log("Parsed date:", result);
+          return result;
+        });
+      }
+
+      // ==================================================
+      // Huis selector functionaliteit
+      // ==================================================
+      document.addEventListener("DOMContentLoaded", function () {
+        const homeSelect = document.getElementById("home-select");
+
+        if (homeSelect) {
+          homeSelect.onchange = function () {
+            const selectedHomeId = this.value;
+
+            // Update sequentieel, met minimale delay tussenin
+            htmx
+              .ajax("GET", `/partials/price/${selectedHomeId}`, {
+                target: "#price-section",
+              })
+              .then(() => {
+                // Na price update, update consumption
+                setTimeout(() => {
+                  htmx
+                    .ajax("GET", `/partials/consumption/${selectedHomeId}`, {
+                      target: "#consumption-section",
+                    })
+                    .then(() => {
+                      // Na consumption update, update production
+                      setTimeout(() => {
+                        htmx.ajax(
+                          "GET",
+                          `/partials/production/${selectedHomeId}`,
+                          {
+                            target: "#production-section",
+                          }
+                        );
+                      }, 50);
+                    });
+                }, 50);
+              });
+          };
+        }
+
+        // ==================================================
+        // Geen productie data handler
+        // ==================================================
+        document.body.addEventListener("noProductionData", function () {
+          const productionSection =
+            document.getElementById("production-section");
+          productionSection.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full">
+                <svg class="w-12 h-12 text-gray-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <p class="text-gray-500 text-center">Dit huis heeft geen energieproductie</p>
+            </div>
+          `;
+        });
+      });
+
+      // ==================================================
+      // Huis details functionaliteit
+      // ==================================================
+      function showHomeDetails(homeId) {
+        const modal = document.getElementById("home-details-modal");
+        const modalContent = document.getElementById("modal-content");
+        const modalTitle = document.getElementById("modal-title");
+
+        // Laad huisgegevens dynamisch
+        htmx
+          .ajax("GET", `/partials/home-details/${homeId}`, {
+            target: "#modal-content",
+          })
+          .then(() => {
+            modalTitle.textContent = "Huisgegevens";
+            modal.classList.remove("hidden");
+          });
+      }
+
+      function closeHomeDetails() {
+        const modal = document.getElementById("home-details-modal");
+        modal.classList.add("hidden");
+      }
+    </script>
+  </body>
+</html>
