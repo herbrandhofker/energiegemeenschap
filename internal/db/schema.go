@@ -105,6 +105,30 @@ func InitSchema(db *sql.DB) error {
 			FOREIGN KEY (home_id) REFERENCES homes(id),
 			CHECK (hour_of_day >= 0 AND hour_of_day < 24)
 		)`,
+		`CREATE TABLE IF NOT EXISTS real_time_measurements (
+			id SERIAL PRIMARY KEY,
+			home_id VARCHAR(50) NOT NULL,
+			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+			power DECIMAL(10,2) NOT NULL,
+			power_production DECIMAL(10,2) NOT NULL,
+			min_power DECIMAL(10,2),
+			average_power DECIMAL(10,2),
+			max_power DECIMAL(10,2),
+			max_power_production DECIMAL(10,2),
+			accumulated_consumption DECIMAL(10,2) NOT NULL,
+			accumulated_production DECIMAL(10,2) NOT NULL,
+			last_meter_consumption DECIMAL(10,2),
+			last_meter_production DECIMAL(10,2),
+			current_l1 DECIMAL(10,2),
+			current_l2 DECIMAL(10,2),
+			current_l3 DECIMAL(10,2),
+			voltage_phase1 DECIMAL(10,2),
+			voltage_phase2 DECIMAL(10,2),
+			voltage_phase3 DECIMAL(10,2),
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (home_id) REFERENCES homes(id),
+			UNIQUE (home_id, timestamp)
+		)`,
 	}
 
 	// Execute create queries
