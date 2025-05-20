@@ -181,33 +181,19 @@ document.body.addEventListener('htmx:sseMessage', function(evt) {
 
         // Update chart data
         measurements.times.push(timestamp);
-        measurements.consumption.push(data.power); // Positive for consumption
-        measurements.production.push(-data.powerProduction); // Negative for production
+        measurements.consumption.push(data.power);
+        measurements.production.push(-data.powerProduction);
 
-        // Keep only the last 5 minutes of data
-        const fiveMinutesAgo = new Date(timestamp.getTime() - 5 * 60 * 1000);
-        while (measurements.times.length > 0 && measurements.times[0] < fiveMinutesAgo) {
+        // Keep only the last 24 hours of data
+        const twentyFourHoursAgo = new Date(timestamp.getTime() - 24 * 60 * 60 * 1000);
+        while (measurements.times.length > 0 && measurements.times[0] < twentyFourHoursAgo) {
             measurements.times.shift();
             measurements.consumption.shift();
             measurements.production.shift();
         }
 
         // Update chart with new data
-        chart.load({
-            columns: [
-                ['times', ...measurements.times],
-                ['consumption', ...measurements.consumption],
-                ['production', ...measurements.production]
-            ]
-        });
-
-        // Update the x-axis range to show the last 5 minutes
-        if (measurements.times.length > 0) {
-            const oldestTime = measurements.times[0];
-            const newestTime = measurements.times[measurements.times.length - 1];
-            chart.axis.min({x: oldestTime});
-            chart.axis.max({x: newestTime});
-        }
+        updateChart();
     } catch (error) {
         console.error('Error processing SSE message:', error);
     }
