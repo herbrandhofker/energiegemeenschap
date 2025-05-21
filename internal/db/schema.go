@@ -14,6 +14,8 @@ func InitSchema(db *sql.DB) error {
 		`DROP TABLE IF EXISTS production CASCADE;`,
 		`DROP TABLE IF EXISTS homes CASCADE;`,
 		`DROP TABLE IF EXISTS owners CASCADE;`,
+		`DROP TABLE IF EXISTS users CASCADE;`,
+		`DROP VIEW IF EXISTS netto_profit CASCADE;`,
 	}
 
 	// Execute drop queries
@@ -25,6 +27,16 @@ func InitSchema(db *sql.DB) error {
 
 	// Create tables if they don't exist
 	createQueries := []string{
+		`CREATE TABLE IF NOT EXISTS users (
+			id SERIAL PRIMARY KEY,
+			email VARCHAR(255) NOT NULL UNIQUE,
+			name VARCHAR(255) NOT NULL,
+			tibber_id VARCHAR(50) NOT NULL UNIQUE,
+			account_type VARCHAR(50) NOT NULL,
+			last_login TIMESTAMP WITH TIME ZONE,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS owners (
 			id SERIAL PRIMARY KEY,
 			email VARCHAR(255) NOT NULL UNIQUE,
@@ -65,6 +77,8 @@ func InitSchema(db *sql.DB) error {
 			real_time_consumption_enabled BOOLEAN,
 			-- Owner reference
 			owner_id INTEGER REFERENCES owners(id),
+			-- User reference
+			user_id INTEGER REFERENCES users(id),
 			-- Timestamps
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -129,6 +143,16 @@ func InitSchema(db *sql.DB) error {
 			FOREIGN KEY (home_id) REFERENCES homes(id),
 			UNIQUE (home_id, timestamp)
 		)`,
+		`CREATE OR REPLACE VIEW netto_profit AS
+			SELECT 
+				p.home_id,
+				p.from_date,
+				c.cost,
+				p.profit,
+				-c.cost + p.profit as netto_profit
+			FROM production p
+			JOIN consumption c ON p.home_id = c.home_id AND p.from_date = c.from_date
+			ORDER BY p.home_id, p.from_date DESC`,
 	}
 
 	// Execute create queries

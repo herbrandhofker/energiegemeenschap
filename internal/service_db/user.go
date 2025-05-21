@@ -2,6 +2,7 @@ package service_db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 // UserService handles user-related operations
 type UserService struct {
 	Client *client.TibberClient
+	DB     *sql.DB
 }
 
 // GetUserData fetches user information from Tibber API
@@ -56,4 +58,43 @@ func (s *UserService) GetUserData(ctx context.Context) (*model.User, error) {
 	}
 
 	return user, nil
+}
+
+// StoreUserData stores user data in the database
+func (s *UserService) StoreUserData(ctx context.Context, user *model.User) error {
+	// Begin a transaction
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Store or update user data
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO owners (email, name, tibber_id, account_type, last_login, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (email) DO UPDATE SET
+			name = EXCLUDED.name,
+			tibber_id = EXCLUDED.tibber_id,
+			account_type = EXCLUDED.account_type,
+			last_login = EXCLUDED.last_login,
+			updated_at = EXCLUDED.updated_at
+	`,
+		user.Email,
+		user.Name,
+		user.ID,
+		user.AccountType,
+		user.LastLogin,
+		time.Now(),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to store user data: %w", err)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"ws/internal/tibber"
@@ -68,7 +69,7 @@ func (s *RealTimeService) StoreMeasurement(ctx context.Context, homeID string, m
 	)
 
 	if err != nil {
-		return fmt.Errorf("error storing real-time measurement: %w", err)
+		return fmt.Errorf("error storing measurement: %w", err)
 	}
 
 	return nil
@@ -129,15 +130,29 @@ func (s *RealTimeService) GetLatestMeasurements(ctx context.Context, homeID stri
 	return measurements, nil
 }
 
-// CleanupOldMeasurements verwijdert metingen ouder dan de opgegeven duur
+// CleanupOldMeasurements removes measurements older than the specified duration
 func (s *RealTimeService) CleanupOldMeasurements(ctx context.Context, olderThan time.Duration) error {
+	// Bereken de cutoff tijd
+	cutoffTime := time.Now().Add(-olderThan)
+
+	// Verwijder oude metingen
 	query := `
 		DELETE FROM real_time_measurements 
-		WHERE timestamp < NOW() - INTERVAL '1 day'
+		WHERE timestamp < $1
 	`
-	_, err := s.DB.ExecContext(ctx, query)
+
+	result, err := s.DB.ExecContext(ctx, query, cutoffTime)
 	if err != nil {
 		return fmt.Errorf("error cleaning up old measurements: %w", err)
 	}
+
+	// Log hoeveel records zijn verwijderd
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("error getting rows affected: %w", err)
+	}
+
+	log.Printf("Cleaned up %d old measurements", rowsAffected)
+
 	return nil
 }
