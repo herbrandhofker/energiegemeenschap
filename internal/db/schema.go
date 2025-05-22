@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-
-// InitSchema initializes the database schema
-func InitDatabase(db *sql.DB) error {
 	// Drop existing tables in reverse dependency order
-
+	func InitDatabase(db *sql.DB) error {
+	//			`CREATE SCHEMA IF NOT EXISTS tibber`,
+	prepStmts:=[]string{	`INSERT INTO tibber.tibber_tokens(token) VALUES ('dfI9b14XZ0Rk5X8PODnCtCBSqCy2ZiqYoT5BAggMBV8') ON conflict DO NOTHING`	,}
+			// Create tables if they don't exist
 
 	// Create tables if they don't exist
 	createQueries := []string{
@@ -129,6 +129,12 @@ func InitDatabase(db *sql.DB) error {
 			FOREIGN KEY (home_id) REFERENCES homes(id),
 			UNIQUE (home_id, timestamp)
 		)`,
+	}
+
+	for _, query := range prepStmts {
+		if _, err := db.Exec(query); err != nil {
+			return fmt.Errorf("error creating schema: %w", err)
+		}
 	}
 
 	// Execute create queries
