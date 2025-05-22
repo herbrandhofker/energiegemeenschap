@@ -9,12 +9,12 @@ import (
 func InitSchema(db *sql.DB) error {
 	// Drop existing tables in reverse dependency order
 	dropQueries := []string{
-		`DROP TABLE IF EXISTS prices CASCADE;`,
-		`DROP TABLE IF EXISTS consumption CASCADE;`,
-		`DROP TABLE IF EXISTS production CASCADE;`,
-		`DROP TABLE IF EXISTS homes CASCADE;`,
-		`DROP TABLE IF EXISTS owners CASCADE;`,
-		`DROP VIEW IF EXISTS netto_profit CASCADE;`,
+		`DROP TABLE IF EXISTS tibber.prices CASCADE;`,
+		`DROP TABLE IF EXISTS tibber.consumption CASCADE;`,
+		`DROP TABLE IF EXISTS tibber.production CASCADE;`,
+		`DROP TABLE IF EXISTS tibber.homes CASCADE;`,
+		`DROP TABLE IF EXISTS tibber.owners CASCADE;`,
+		`DROP VIEW IF EXISTS tibber.netto_profit CASCADE;`,
 	}
 
 	// Execute drop queries
@@ -26,7 +26,7 @@ func InitSchema(db *sql.DB) error {
 
 	// Create tables if they don't exist
 	createQueries := []string{
-		`CREATE TABLE IF NOT EXISTS owners (
+		`CREATE TABLE IF NOT EXISTS tibber.owners (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(255) NOT NULL,
 			first_name VARCHAR(255),
@@ -48,7 +48,7 @@ func InitSchema(db *sql.DB) error {
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS homes (
+		`CREATE TABLE IF NOT EXISTS tibber.homes (
 			id VARCHAR(50) PRIMARY KEY,
 			type VARCHAR(20),
 			size INTEGER,
@@ -82,29 +82,29 @@ func InitSchema(db *sql.DB) error {
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS consumption (
+		`CREATE TABLE IF NOT EXISTS tibber.consumption (
 			home_id VARCHAR(50),
-			from_date DATE,
+			from_time TIMESTAMP WITH TIME ZONE,
 			to_time TIMESTAMP WITH TIME ZONE,
 			consumption DECIMAL(10,2),
 			cost DECIMAL(10,2),
 			currency TEXT,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (home_id, from_date),
+			PRIMARY KEY (home_id, from_time),
 			FOREIGN KEY (home_id) REFERENCES homes(id)
 		)`,
-		`CREATE TABLE IF NOT EXISTS production (
+		`CREATE TABLE IF NOT EXISTS tibber.production (
 			home_id VARCHAR(50),
-			from_date DATE,
+			from_time TIMESTAMP WITH TIME ZONE,
 			to_time TIMESTAMP WITH TIME ZONE,
 			production DECIMAL(10,2),
 			profit DECIMAL(10,2),
 			currency TEXT,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (home_id, from_date),
+			PRIMARY KEY (home_id, from_time),
 			FOREIGN KEY (home_id) REFERENCES homes(id)
 		)`,
-		`CREATE TABLE IF NOT EXISTS prices (
+		`CREATE TABLE IF NOT EXISTS tibber.prices (
 			home_id VARCHAR(50),
 			price_date DATE,
 			hour_of_day INTEGER,
@@ -118,7 +118,7 @@ func InitSchema(db *sql.DB) error {
 			FOREIGN KEY (home_id) REFERENCES homes(id),
 			CHECK (hour_of_day >= 0 AND hour_of_day < 24)
 		)`,
-		`CREATE TABLE IF NOT EXISTS real_time_measurements (
+		`CREATE TABLE IF NOT EXISTS tibber.real_time_measurements (
 			id SERIAL PRIMARY KEY,
 			home_id VARCHAR(50) NOT NULL,
 			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -142,16 +142,6 @@ func InitSchema(db *sql.DB) error {
 			FOREIGN KEY (home_id) REFERENCES homes(id),
 			UNIQUE (home_id, timestamp)
 		)`,
-		`CREATE OR REPLACE VIEW netto_profit AS
-			SELECT 
-				p.home_id,
-				p.from_date,
-				c.cost,
-				p.profit,
-				-c.cost + p.profit as netto_profit
-			FROM production p
-			JOIN consumption c ON p.home_id = c.home_id AND p.from_date = c.from_date
-			ORDER BY p.home_id, p.from_date DESC`,
 	}
 
 	// Execute create queries

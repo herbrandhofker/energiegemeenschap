@@ -69,9 +69,9 @@ func (s *ConsumptionService) GetConsumption(ctx context.Context, homeId string, 
 
 	// Prepare the insert statement
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO consumption (home_id, from_date, to_time, consumption, cost, currency)
+		INSERT INTO consumption (home_id, from_time, to_time, consumption, cost, currency)
 		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (home_id, from_date) DO NOTHING
+		ON CONFLICT (home_id, from_time) DO NOTHING
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare statement: %w", err)
@@ -162,11 +162,11 @@ func (s *ConsumptionService) GetDailySummary(ctx context.Context, homeId string,
 // getDailySummaryFromDB retrieves consumption summary from the database
 func (s *ConsumptionService) getDailySummaryFromDB(ctx context.Context, homeId string, days int) ([]model.ConsumptionSummary, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT from_date, to_time, consumption, cost, currency
+		SELECT from_time, to_time, consumption, cost, currency
 		FROM consumption
 		WHERE home_id = $1
-		AND from_date >= CURRENT_DATE - INTERVAL '1 day' * $2
-		ORDER BY from_date DESC
+		AND from_time>= CURRENT_DATE - INTERVAL '1 day' * $2
+		ORDER BY from_time DESC
 	`, homeId, days)
 	if err != nil {
 		return nil, err
@@ -176,13 +176,13 @@ func (s *ConsumptionService) getDailySummaryFromDB(ctx context.Context, homeId s
 	var summaries []model.ConsumptionSummary
 	for rows.Next() {
 		var summary model.ConsumptionSummary
-		var fromDate time.Time
+		var fromTime time.Time
 		var toTime time.Time
-		err := rows.Scan(&fromDate, &toTime, &summary.Consumption, &summary.Cost, &summary.Currency)
+		err := rows.Scan(&fromTime, &toTime, &summary.Consumption, &summary.Cost, &summary.Currency)
 		if err != nil {
 			return nil, err
 		}
-		summary.From = fromDate.Format(time.RFC3339)
+		summary.From = fromTime.Format(time.RFC3339)
 		summary.To = toTime.Format(time.RFC3339)
 		summaries = append(summaries, summary)
 	}
