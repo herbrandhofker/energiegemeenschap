@@ -15,14 +15,26 @@ type User struct {
 	APIToken    string    `json:"-"` // Don't include this in JSON responses
 }
 
-// LegalEntity
+// Owner represents the owner of a home in the Tibber system
 type Owner struct {
-	Name        string `json:"name"`
-	FirstName   string `json:"firstName"`
-	MiddleName  string `json:"middleName"`
-	LastName    string `json:"lastName"`
-	AccountType string `json:"accountType"`
-	IsCompany   bool   `json:"isCompany"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Address   struct {
+		Address1   string `json:"address1"`
+		Address2   string `json:"address2"`
+		Address3   string `json:"address3"`
+		City       string `json:"city"`
+		PostalCode string `json:"postalCode"`
+		Country    string `json:"country"`
+		Latitude   string `json:"latitude"`
+		Longitude  string `json:"longitude"`
+	} `json:"address"`
+	ContactInfo struct {
+		Email  string `json:"email"`
+		Mobile string `json:"mobile"`
+	} `json:"contactInfo"`
 }
 
 // MeteringPointData represents metering point data for a home
@@ -53,7 +65,7 @@ type Home struct {
 	Consumption         []Consumption     `json:"consumption,omitempty"`
 	Production          []Production      `json:"production,omitempty"`
 	CurrentSubscription *Subscription     `json:"currentSubscription,omitempty"`
-	Owner               *User             `json:"owner,omitempty"`
+	Owner               *Owner            `json:"owner,omitempty"`
 }
 
 // Address represents the address of a home

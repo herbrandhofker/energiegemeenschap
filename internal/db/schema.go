@@ -39,11 +39,22 @@ func InitSchema(db *sql.DB) error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS owners (
 			id SERIAL PRIMARY KEY,
-			email VARCHAR(255) NOT NULL UNIQUE,
 			name VARCHAR(255) NOT NULL,
-			tibber_id VARCHAR(50) NOT NULL UNIQUE,
-			account_type VARCHAR(50) NOT NULL,
-			last_login TIMESTAMP WITH TIME ZONE,
+			first_name VARCHAR(255),
+			last_name VARCHAR(255),
+			-- Address fields
+			address_1 VARCHAR(255),
+			address_2 VARCHAR(255),
+			address_3 VARCHAR(255),
+			city VARCHAR(100),
+			postal_code VARCHAR(20),
+			country VARCHAR(50),
+			latitude VARCHAR(20),
+			longitude VARCHAR(20),
+			-- Contact info
+			email VARCHAR(255) NOT NULL UNIQUE,
+			mobile VARCHAR(50),
+			-- Timestamps
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -77,8 +88,6 @@ func InitSchema(db *sql.DB) error {
 			real_time_consumption_enabled BOOLEAN,
 			-- Owner reference
 			owner_id INTEGER REFERENCES owners(id),
-			-- User reference
-			user_id INTEGER REFERENCES users(id),
 			-- Timestamps
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

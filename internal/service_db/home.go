@@ -59,21 +59,50 @@ func (s *HomeService) fetchAndStoreHomes(ctx context.Context) ([]model.Home, err
 	// First store or update the owner and get the ID
 	var ownerID int
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO owners (email, name, tibber_id, account_type, last_login, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO owners (
+			name, first_name, last_name,
+			address_1, address_2, address_3,
+			city, postal_code, country,
+			latitude, longitude,
+			email, mobile,
+			updated_at
+		) VALUES (
+			$1, $2, $3,
+			$4, $5, $6,
+			$7, $8, $9,
+			$10, $11,
+			$12, $13,
+			$14
+		)
 		ON CONFLICT (email) DO UPDATE SET
 			name = EXCLUDED.name,
-			tibber_id = EXCLUDED.tibber_id,
-			account_type = EXCLUDED.account_type,
-			last_login = EXCLUDED.last_login,
+			first_name = EXCLUDED.first_name,
+			last_name = EXCLUDED.last_name,
+			address_1 = EXCLUDED.address_1,
+			address_2 = EXCLUDED.address_2,
+			address_3 = EXCLUDED.address_3,
+			city = EXCLUDED.city,
+			postal_code = EXCLUDED.postal_code,
+			country = EXCLUDED.country,
+			latitude = EXCLUDED.latitude,
+			longitude = EXCLUDED.longitude,
+			mobile = EXCLUDED.mobile,
 			updated_at = EXCLUDED.updated_at
 		RETURNING id
 	`,
-		user.Email,
 		user.Name,
-		user.ID,
-		user.AccountType,
-		user.LastLogin,
+		"", // firstName not available from user
+		"", // lastName not available from user
+		"", // address fields not available from user
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		user.Email,
+		"", // mobile not available from user
 		time.Now(),
 	).Scan(&ownerID)
 	if err != nil {
@@ -235,8 +264,13 @@ func (s *HomeService) getHomesFromDB(ctx context.Context) ([]model.Home, error) 
 			h.price_area_code, h.production_ean, h.energy_tax_type,
 			h.vat_type, h.estimated_annual_consumption,
 			h.real_time_consumption_enabled,
-			o.id as owner_id, o.email as owner_email, o.name as owner_name, 
-			o.tibber_id as owner_tibber_id, o.account_type as owner_account_type
+			o.id as owner_id, o.name as owner_name, o.first_name as owner_first_name,
+			o.last_name as owner_last_name, o.email as owner_email,
+			o.mobile as owner_mobile, o.address_1 as owner_address_1,
+			o.address_2 as owner_address_2, o.address_3 as owner_address_3,
+			o.city as owner_city, o.postal_code as owner_postal_code,
+			o.country as owner_country, o.latitude as owner_latitude,
+			o.longitude as owner_longitude
 		FROM homes h
 		LEFT JOIN owners o ON h.owner_id = o.id
 	`)
@@ -248,7 +282,7 @@ func (s *HomeService) getHomesFromDB(ctx context.Context) ([]model.Home, error) 
 	var homes []model.Home
 	for rows.Next() {
 		var home model.Home
-		var owner model.User
+		var owner model.Owner
 		err := rows.Scan(
 			&home.Id, &home.Type, &home.Size, &home.AppNickname, &home.AppAvatar,
 			&home.MainFuseSize, &home.NumberOfResidents, &home.TimeZone,
@@ -260,7 +294,11 @@ func (s *HomeService) getHomesFromDB(ctx context.Context) ([]model.Home, error) 
 			&home.MeteringPointData.EnergyTaxType, &home.MeteringPointData.VatType,
 			&home.MeteringPointData.EstimatedAnnualConsumption,
 			&home.Features.RealTimeConsumptionEnabled,
-			&owner.ID, &owner.Email, &owner.Name, &owner.ID, &owner.AccountType,
+			&owner.ID, &owner.Name, &owner.FirstName, &owner.LastName,
+			&owner.ContactInfo.Email, &owner.ContactInfo.Mobile,
+			&owner.Address.Address1, &owner.Address.Address2, &owner.Address.Address3,
+			&owner.Address.City, &owner.Address.PostalCode, &owner.Address.Country,
+			&owner.Address.Latitude, &owner.Address.Longitude,
 		)
 		if err != nil {
 			return nil, err
