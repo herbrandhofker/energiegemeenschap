@@ -16,8 +16,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// RunRealTimeCollector is de real-time data collector
-func RunRealTimeCollector(ctx context.Context) {
+// Collector is de real-time data collector
+func Collector(ctx context.Context) {
 	log.Printf("Starting real-time collector...")
 
 	// Laad .env bestand

@@ -28,7 +28,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Start real-time collector in a goroutine
-	go collector.RunRealTimeCollector(ctx)
+	go collector.Collector(ctx)
 
 	// Wait for shutdown signal
 	<-sigChan
