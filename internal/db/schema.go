@@ -5,24 +5,11 @@ import (
 	"fmt"
 )
 
+
 // InitSchema initializes the database schema
 func InitSchema(db *sql.DB) error {
 	// Drop existing tables in reverse dependency order
-	dropQueries := []string{
-		`DROP TABLE IF EXISTS tibber.prices CASCADE;`,
-		`DROP TABLE IF EXISTS tibber.consumption CASCADE;`,
-		`DROP TABLE IF EXISTS tibber.production CASCADE;`,
-		`DROP TABLE IF EXISTS tibber.homes CASCADE;`,
-		`DROP TABLE IF EXISTS tibber.owners CASCADE;`,
-		`DROP VIEW IF EXISTS tibber.netto_profit CASCADE;`,
-	}
 
-	// Execute drop queries
-	for _, query := range dropQueries {
-		if _, err := db.Exec(query); err != nil {
-			return fmt.Errorf("error dropping tables: %w", err)
-		}
-	}
 
 	// Create tables if they don't exist
 	createQueries := []string{

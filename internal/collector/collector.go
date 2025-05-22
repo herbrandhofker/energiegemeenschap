@@ -17,10 +17,7 @@ import (
 
 // Collector is de real-time data collector
 func Collector(ctx context.Context, dbConn *sql.DB) {
-	log.Printf("Starting real-time collector...")
-
-
-	// Haal database URL op
+	log.Printf("Starting collector...")
 
 
 	// Initialiseer database schema
