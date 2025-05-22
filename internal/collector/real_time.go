@@ -67,13 +67,11 @@ func RunRealTimeCollector(ctx context.Context) {
 	// Maak Tibber clients
 	wsClient := tibber.NewClient(token, houseID)
 	apiClient := client.NewClient(token)
-	log.Printf("Created Tibber clients")
 
 	// Verifieer toegang tot Tibber API
 	if err := wsClient.VerifyAccess(); err != nil {
 		log.Fatalf("Error verifying Tibber access: %v", err)
 	}
-	log.Printf("Verified Tibber API access")
 
 	// Maak services
 	homeService := &service_db.HomeService{
@@ -118,27 +116,16 @@ func RunRealTimeCollector(ctx context.Context) {
 				home := home // Create new variable for goroutine
 				go func() {
 					// Load initial data
-					log.Printf("Loading initial data for home %s", home.Id)
-
-					// Load prices
 					if _, err := priceService.GetPrices(ctx, home.Id); err != nil {
 						log.Printf("Error loading initial prices for home %s: %v", home.Id, err)
-					} else {
-						log.Printf("Successfully loaded initial prices for home %s", home.Id)
 					}
 
-					// Load consumption data
 					if _, err := consumptionService.GetConsumption(ctx, home.Id, "DAILY", 30); err != nil {
 						log.Printf("Error loading initial consumption data for home %s: %v", home.Id, err)
-					} else {
-						log.Printf("Successfully loaded initial consumption data for home %s", home.Id)
 					}
 
-					// Load production data
 					if _, err := productionService.GetProduction(ctx, home.Id, "DAILY", 30); err != nil {
 						log.Printf("Error loading initial production data for home %s: %v", home.Id, err)
-					} else {
-						log.Printf("Successfully loaded initial production data for home %s", home.Id)
 					}
 
 					// Start WebSocket subscription
@@ -151,18 +138,8 @@ func RunRealTimeCollector(ctx context.Context) {
 						case <-ctx.Done():
 							return
 						case measurement := <-wsClient.WebsocketClient.Data:
-							// Log measurement details
-							log.Printf("Received measurement for home %s at %v:", home.Id, measurement.Timestamp)
-							log.Printf("  Power: %.2f W", measurement.Power)
-							log.Printf("  Power Production: %.2f W", measurement.PowerProduction)
-							log.Printf("  Accumulated Consumption: %.2f kWh", measurement.AccumulatedConsumption)
-							log.Printf("  Accumulated Production: %.2f kWh", measurement.AccumulatedProduction)
-
-							// Store in database
 							if err := realTimeService.StoreMeasurement(ctx, home.Id, measurement); err != nil {
 								log.Printf("Error storing measurement for home %s: %v", home.Id, err)
-							} else {
-								log.Printf("Successfully stored measurement for home %s at %v", home.Id, measurement.Timestamp)
 							}
 						}
 					}
