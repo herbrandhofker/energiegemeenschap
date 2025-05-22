@@ -212,3 +212,71 @@ subscription{
     }
   }
 }
+
+# Tibber Data Collector
+
+## Database Structure
+
+The application uses PostgreSQL with the following structure:
+
+```
+energiegemeenschap (database)
+└── tibber (schema)
+    ├── owners
+    │   ├── id (SERIAL PRIMARY KEY)
+    │   ├── name (VARCHAR(255))
+    │   ├── email (VARCHAR(255))
+    │   ├── created_at (TIMESTAMP)
+    │   └── updated_at (TIMESTAMP)
+    │
+    ├── homes
+    │   ├── id (VARCHAR(255) PRIMARY KEY)
+    │   ├── owner_id (INTEGER REFERENCES owners)
+    │   ├── name (VARCHAR(255))
+    │   ├── address (VARCHAR(255))
+    │   ├── has_production_capability (BOOLEAN)
+    │   ├── created_at (TIMESTAMP)
+    │   └── updated_at (TIMESTAMP)
+    │
+    ├── prices
+    │   ├── id (SERIAL PRIMARY KEY)
+    │   ├── home_id (VARCHAR(255) REFERENCES homes)
+    │   ├── timestamp (TIMESTAMP)
+    │   ├── total_price (DECIMAL)
+    │   ├── energy_price (DECIMAL)
+    │   ├── tax_price (DECIMAL)
+    │   ├── currency (VARCHAR)
+    │   ├── created_at (TIMESTAMP)
+    │   └── updated_at (TIMESTAMP)
+    │
+    ├── consumption
+    │   ├── id (SERIAL PRIMARY KEY)
+    │   ├── home_id (VARCHAR(255) REFERENCES homes)
+    │   ├── timestamp (TIMESTAMP)
+    │   ├── consumption (DECIMAL)
+    │   ├── unit (VARCHAR)
+    │   ├── created_at (TIMESTAMP)
+    │   └── updated_at (TIMESTAMP)
+    │
+    ├── production
+    │   ├── id (SERIAL PRIMARY KEY)
+    │   ├── home_id (VARCHAR(255) REFERENCES homes)
+    │   ├── timestamp (TIMESTAMP)
+    │   ├── production (DECIMAL)
+    │   ├── unit (VARCHAR)
+    │   ├── created_at (TIMESTAMP)
+    │   └── updated_at (TIMESTAMP)
+    │
+    └── real_time_measurements
+        ├── id (SERIAL PRIMARY KEY)
+        ├── home_id (VARCHAR(255) REFERENCES homes)
+        ├── timestamp (TIMESTAMP)
+        ├── power (DECIMAL)
+        ├── power_production (DECIMAL)
+        ├── accumulated_consumption (DECIMAL)
+        ├── accumulated_production (DECIMAL)
+        ├── created_at (TIMESTAMP)
+        └── updated_at (TIMESTAMP)
+```
+
+All tables are created in the `tibber` schema within the `energiegemeenschap` database. The database uses the Europe/Amsterdam timezone.
