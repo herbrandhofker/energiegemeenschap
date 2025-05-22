@@ -1,3 +1,6 @@
+-- Set timezone to Europe/Amsterdam
+SET timezone = 'Europe/Amsterdam';
+
 -- Create owners table
 CREATE TABLE IF NOT EXISTS owners (
     id SERIAL PRIMARY KEY,
