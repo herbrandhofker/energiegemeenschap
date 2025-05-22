@@ -33,11 +33,14 @@ const (
                     appNickname
                     appAvatar
                     mainFuseSize
+                    numberOfResidents
+                    timeZone
                     address {
                         address1
                         address2
-                        postalCode
+                        address3
                         city
+                        postalCode
                         country
                         latitude
                         longitude
@@ -54,6 +57,26 @@ const (
                     }
                     features {
                         realTimeConsumptionEnabled
+                    }
+                    owner {
+                        address {
+                            address1
+                            address2
+                            address3
+                            city
+                            postalCode
+                            country
+                            latitude
+                            longitude
+                        }
+                        name
+                        firstName
+                        middleName
+                        lastName
+                        contactInfo {
+                            email
+                            mobile
+                        }
                     }
                 }
             }
@@ -181,4 +204,3 @@ const (
     
 `
 )
-

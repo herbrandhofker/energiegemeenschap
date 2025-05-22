@@ -17,11 +17,12 @@ type User struct {
 
 // Owner represents the owner of a home in the Tibber system
 type Owner struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-	Address   struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	FirstName  string `json:"firstName"`
+	MiddleName string `json:"middleName"`
+	LastName   string `json:"lastName"`
+	Address    struct {
 		Address1   string `json:"address1"`
 		Address2   string `json:"address2"`
 		Address3   string `json:"address3"`

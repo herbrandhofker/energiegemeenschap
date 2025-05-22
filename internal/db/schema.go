@@ -14,7 +14,6 @@ func InitSchema(db *sql.DB) error {
 		`DROP TABLE IF EXISTS production CASCADE;`,
 		`DROP TABLE IF EXISTS homes CASCADE;`,
 		`DROP TABLE IF EXISTS owners CASCADE;`,
-		`DROP TABLE IF EXISTS users CASCADE;`,
 		`DROP VIEW IF EXISTS netto_profit CASCADE;`,
 	}
 
@@ -27,20 +26,11 @@ func InitSchema(db *sql.DB) error {
 
 	// Create tables if they don't exist
 	createQueries := []string{
-		`CREATE TABLE IF NOT EXISTS users (
-			id SERIAL PRIMARY KEY,
-			email VARCHAR(255) NOT NULL UNIQUE,
-			name VARCHAR(255) NOT NULL,
-			tibber_id VARCHAR(50) NOT NULL UNIQUE,
-			account_type VARCHAR(50) NOT NULL,
-			last_login TIMESTAMP WITH TIME ZONE,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-		)`,
 		`CREATE TABLE IF NOT EXISTS owners (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(255) NOT NULL,
 			first_name VARCHAR(255),
+			middle_name VARCHAR(255),
 			last_name VARCHAR(255),
 			-- Address fields
 			address_1 VARCHAR(255),

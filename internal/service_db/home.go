@@ -42,73 +42,6 @@ func (s *HomeService) GetHomeDetails(ctx context.Context) ([]model.Home, error) 
 
 // fetchAndStoreHomes fetches homes from API and stores them in database
 func (s *HomeService) fetchAndStoreHomes(ctx context.Context) ([]model.Home, error) {
-	// First get user data to get the owner information
-	userSvc := &UserService{Client: s.Client}
-	user, err := userSvc.GetUserData(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user data: %w", err)
-	}
-
-	// Begin a transaction for batch inserts
-	tx, err := s.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback() // Rollback if not committed
-
-	// First store or update the owner and get the ID
-	var ownerID int
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO owners (
-			name, first_name, last_name,
-			address_1, address_2, address_3,
-			city, postal_code, country,
-			latitude, longitude,
-			email, mobile,
-			updated_at
-		) VALUES (
-			$1, $2, $3,
-			$4, $5, $6,
-			$7, $8, $9,
-			$10, $11,
-			$12, $13,
-			$14
-		)
-		ON CONFLICT (email) DO UPDATE SET
-			name = EXCLUDED.name,
-			first_name = EXCLUDED.first_name,
-			last_name = EXCLUDED.last_name,
-			address_1 = EXCLUDED.address_1,
-			address_2 = EXCLUDED.address_2,
-			address_3 = EXCLUDED.address_3,
-			city = EXCLUDED.city,
-			postal_code = EXCLUDED.postal_code,
-			country = EXCLUDED.country,
-			latitude = EXCLUDED.latitude,
-			longitude = EXCLUDED.longitude,
-			mobile = EXCLUDED.mobile,
-			updated_at = EXCLUDED.updated_at
-		RETURNING id
-	`,
-		user.Name,
-		"", // firstName not available from user
-		"", // lastName not available from user
-		"", // address fields not available from user
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		user.Email,
-		"", // mobile not available from user
-		time.Now(),
-	).Scan(&ownerID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to store owner: %w", err)
-	}
-
 	// Execute the homes query
 	resp, err := s.Client.QueryAPI(ctx, model.HomeDetailsQuery, nil)
 	if err != nil {
@@ -126,6 +59,13 @@ func (s *HomeService) fetchAndStoreHomes(ctx context.Context) ([]model.Home, err
 	if !ok {
 		return nil, fmt.Errorf("no homes data in response")
 	}
+
+	// Begin a transaction for batch inserts
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback() // Rollback if not committed
 
 	// Prepare the homes insert statement
 	stmt, err := tx.PrepareContext(ctx, `
@@ -223,23 +163,93 @@ func (s *HomeService) fetchAndStoreHomes(ctx context.Context) ([]model.Home, err
 			}
 		}
 
-		// Store in database with owner_id
-		_, err = stmt.ExecContext(ctx,
-			home.Id, home.Type, home.Size, home.AppNickname, home.AppAvatar,
-			home.MainFuseSize, home.NumberOfResidents, home.TimeZone,
-			home.Address.Address1, home.Address.Address2, home.Address.PostalCode,
-			home.Address.City, home.Address.Country, home.Address.Latitude,
-			home.Address.Longitude, home.MeteringPointData.ConsumptionEan,
-			home.MeteringPointData.GridCompany, home.MeteringPointData.GridAreaCode,
-			home.MeteringPointData.PriceAreaCode, home.MeteringPointData.ProductionEan,
-			home.MeteringPointData.EnergyTaxType, home.MeteringPointData.VatType,
-			home.MeteringPointData.EstimatedAnnualConsumption,
-			home.Features.RealTimeConsumptionEnabled,
-			ownerID, // Use the owner ID we got from the insert/update
-			time.Now(),
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to store home %s: %w", home.Id, err)
+		// Parse owner if available
+		if ownerData, ok := homeData["owner"].(map[string]interface{}); ok {
+			// Extract address data
+			var addressData map[string]interface{}
+			if addr, ok := ownerData["address"].(map[string]interface{}); ok {
+				addressData = addr
+			}
+
+			// Extract contact info data
+			var contactData map[string]interface{}
+			if contact, ok := ownerData["contactInfo"].(map[string]interface{}); ok {
+				contactData = contact
+			}
+
+			// First store or update the owner and get the ID
+			var ownerID int
+			err = tx.QueryRowContext(ctx, `
+				INSERT INTO owners (
+					name, first_name, middle_name, last_name,
+					address_1, address_2, address_3,
+					city, postal_code, country,
+					latitude, longitude,
+					email, mobile,
+					updated_at
+				) VALUES (
+					$1, $2, $3, $4,
+					$5, $6, $7,
+					$8, $9, $10,
+					$11, $12,
+					$13, $14,
+					$15
+				)
+				ON CONFLICT (email) DO UPDATE SET
+					name = EXCLUDED.name,
+					first_name = EXCLUDED.first_name,
+					middle_name = EXCLUDED.middle_name,
+					last_name = EXCLUDED.last_name,
+					address_1 = EXCLUDED.address_1,
+					address_2 = EXCLUDED.address_2,
+					address_3 = EXCLUDED.address_3,
+					city = EXCLUDED.city,
+					postal_code = EXCLUDED.postal_code,
+					country = EXCLUDED.country,
+					latitude = EXCLUDED.latitude,
+					longitude = EXCLUDED.longitude,
+					mobile = EXCLUDED.mobile,
+					updated_at = EXCLUDED.updated_at
+				RETURNING id
+			`,
+				client.GetString(ownerData, "name"),
+				client.GetString(ownerData, "firstName"),
+				client.GetString(ownerData, "middleName"),
+				client.GetString(ownerData, "lastName"),
+				client.GetString(addressData, "address1"),
+				client.GetString(addressData, "address2"),
+				client.GetString(addressData, "address3"),
+				client.GetString(addressData, "city"),
+				client.GetString(addressData, "postalCode"),
+				client.GetString(addressData, "country"),
+				client.GetString(addressData, "latitude"),
+				client.GetString(addressData, "longitude"),
+				client.GetString(contactData, "email"),
+				client.GetString(contactData, "mobile"),
+				time.Now(),
+			).Scan(&ownerID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to store owner: %w", err)
+			}
+
+			// Store in database with owner_id
+			_, err = stmt.ExecContext(ctx,
+				home.Id, home.Type, home.Size, home.AppNickname, home.AppAvatar,
+				home.MainFuseSize, home.NumberOfResidents, home.TimeZone,
+				home.Address.Address1, home.Address.Address2, home.Address.PostalCode,
+				home.Address.City, home.Address.Country, home.Address.Latitude,
+				home.Address.Longitude, home.MeteringPointData.ConsumptionEan,
+				home.MeteringPointData.GridCompany, home.MeteringPointData.GridAreaCode,
+				home.MeteringPointData.PriceAreaCode, home.MeteringPointData.ProductionEan,
+				home.MeteringPointData.EnergyTaxType, home.MeteringPointData.VatType,
+				home.MeteringPointData.EstimatedAnnualConsumption,
+				home.Features.RealTimeConsumptionEnabled,
+				ownerID, // Use the owner ID we got from the insert/update
+				time.Now(),
+			)
+			if err != nil {
+				return nil, fmt.Errorf("failed to store home %s: %w", home.Id, err)
+			}
 		}
 
 		homes = append(homes, home)
