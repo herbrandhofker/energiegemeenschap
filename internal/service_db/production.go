@@ -114,10 +114,10 @@ func (s *ProductionService) GetProduction(ctx context.Context, homeId string, re
 		// Add to home's production list
 		home.Production = append(home.Production, production)
 
-		// Store in database - note we now use fromTime.Truncate(24*time.Hour) to get just the date
+		// Store in database
 		_, err = stmt.ExecContext(ctx,
 			homeId,
-			fromTime.Truncate(24*time.Hour),
+			fromTime,
 			toTime,
 			production.Production,
 			production.Profit,

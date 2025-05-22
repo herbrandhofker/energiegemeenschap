@@ -114,10 +114,10 @@ func (s *ConsumptionService) GetConsumption(ctx context.Context, homeId string, 
 		// Add to home's consumption list
 		home.Consumption = append(home.Consumption, consumption)
 
-		// Store in database - note we now use fromTime.Truncate(24*time.Hour) to get just the date
+		// Store in database
 		_, err = stmt.ExecContext(ctx,
 			homeId,
-			fromTime.Truncate(24*time.Hour),
+			fromTime,
 			toTime,
 			consumption.Consumption,
 			consumption.Cost,
