@@ -7,7 +7,7 @@ import (
 
 
 // InitSchema initializes the database schema
-func InitSchema(db *sql.DB) error {
+func InitDatabase(db *sql.DB) error {
 	// Drop existing tables in reverse dependency order
 
 

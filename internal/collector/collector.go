@@ -21,7 +21,7 @@ func Collector(ctx context.Context, dbConn *sql.DB) {
 
 
 	// Initialiseer database schema
-	if err := db.InitSchema(dbConn); err != nil {
+	if err := db.InitDatabase(dbConn); err != nil {
 		log.Fatalf("Error initializing database schema: %v", err)
 	}
 	log.Printf("Initialized database schema")
