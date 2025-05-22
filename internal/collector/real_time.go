@@ -80,8 +80,26 @@ func RunRealTimeCollector(ctx context.Context) {
 		Client: apiClient,
 		DB:     dbConn,
 	}
+	priceService := &service_db.PriceService{
+		Client: apiClient,
+		DB:     dbConn,
+	}
+	consumptionService := &service_db.ConsumptionService{
+		Client: apiClient,
+		DB:     dbConn,
+	}
+	productionService := &service_db.ProductionService{
+		Client: apiClient,
+		DB:     dbConn,
+	}
+	realTimeService := &service_db.RealTimeService{
+		DB: dbConn,
+	}
 
-	// Start real-time collection for each home
+	// Start cleanup goroutine
+	go cleanupOldMeasurements(ctx, dbConn)
+
+	// Start a goroutine for each home
 	for {
 		select {
 		case <-ctx.Done():
@@ -97,11 +115,58 @@ func RunRealTimeCollector(ctx context.Context) {
 
 			// Start real-time collection for each home
 			for _, home := range homes {
-				go func(h model.Home) {
-					if err := collectRealTimeData(ctx, wsClient, dbConn, h); err != nil {
-						log.Printf("Error collecting real-time data for home %s: %v", h.Id, err)
+				home := home // Create new variable for goroutine
+				go func() {
+					// Load initial data
+					log.Printf("Loading initial data for home %s", home.Id)
+
+					// Load prices
+					if _, err := priceService.GetPrices(ctx, home.Id); err != nil {
+						log.Printf("Error loading initial prices for home %s: %v", home.Id, err)
+					} else {
+						log.Printf("Successfully loaded initial prices for home %s", home.Id)
 					}
-				}(home)
+
+					// Load consumption data
+					if _, err := consumptionService.GetConsumption(ctx, home.Id, "DAILY", 30); err != nil {
+						log.Printf("Error loading initial consumption data for home %s: %v", home.Id, err)
+					} else {
+						log.Printf("Successfully loaded initial consumption data for home %s", home.Id)
+					}
+
+					// Load production data
+					if _, err := productionService.GetProduction(ctx, home.Id, "DAILY", 30); err != nil {
+						log.Printf("Error loading initial production data for home %s: %v", home.Id, err)
+					} else {
+						log.Printf("Successfully loaded initial production data for home %s", home.Id)
+					}
+
+					// Start WebSocket subscription
+					wsClient.Wg.Add(1)
+					go wsClient.Subscribe(ctx)
+
+					// Process measurements
+					for {
+						select {
+						case <-ctx.Done():
+							return
+						case measurement := <-wsClient.WebsocketClient.Data:
+							// Log measurement details
+							log.Printf("Received measurement for home %s at %v:", home.Id, measurement.Timestamp)
+							log.Printf("  Power: %.2f W", measurement.Power)
+							log.Printf("  Power Production: %.2f W", measurement.PowerProduction)
+							log.Printf("  Accumulated Consumption: %.2f kWh", measurement.AccumulatedConsumption)
+							log.Printf("  Accumulated Production: %.2f kWh", measurement.AccumulatedProduction)
+
+							// Store in database
+							if err := realTimeService.StoreMeasurement(ctx, home.Id, measurement); err != nil {
+								log.Printf("Error storing measurement for home %s: %v", home.Id, err)
+							} else {
+								log.Printf("Successfully stored measurement for home %s at %v", home.Id, measurement.Timestamp)
+							}
+						}
+					}
+				}()
 			}
 
 			// Wait before next update
@@ -114,4 +179,33 @@ func RunRealTimeCollector(ctx context.Context) {
 func collectRealTimeData(ctx context.Context, client *tibber.Client, db *sql.DB, home model.Home) error {
 	// ... rest of the code ...
 	return nil
+}
+
+// cleanupOldMeasurements removes measurements older than 24 hours
+func cleanupOldMeasurements(ctx context.Context, dbConn *sql.DB) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			// Wait until 3 AM
+			now := time.Now()
+			next := time.Date(now.Year(), now.Month(), now.Day(), 3, 0, 0, 0, now.Location())
+			if now.After(next) {
+				next = next.Add(24 * time.Hour)
+			}
+			time.Sleep(next.Sub(now))
+
+			// Delete measurements older than 24 hours
+			query := `
+				DELETE FROM real_time_measurements 
+				WHERE timestamp < NOW() - INTERVAL '24 hours'
+			`
+			if _, err := dbConn.ExecContext(ctx, query); err != nil {
+				log.Printf("Error cleaning up old measurements: %v", err)
+			} else {
+				log.Printf("Cleaned up measurements older than 24 hours")
+			}
+		}
+	}
 }
