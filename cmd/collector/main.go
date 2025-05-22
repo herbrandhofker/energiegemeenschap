@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"ws/internal/collector"
+	"ws/internal/db"
 
 	"github.com/joho/godotenv"
 )
@@ -27,9 +28,26 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start real-time collector in a goroutine
-	go collector.Collector(ctx)
+	// Start rea
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL environment variable is not set")
+	}
+	log.Printf("Found DATABASE_URL")
 
+	// Parse database URL en maak verbinding
+	dbConfig, err := db.ParseURL(dbURL)
+	if err != nil {
+		log.Fatalf("Error parsing database URL: %v", err)
+	}
+
+	dbConn, err := db.NewConnection(dbConfig)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+	defer dbConn.Close()
+	log.Printf("Connected to database")
+	go collector.Collector(ctx,dbConn)
 	// Wait for shutdown signal
 	<-sigChan
 	cancel()

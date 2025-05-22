@@ -13,38 +13,15 @@ import (
 	"ws/internal/service_db"
 	"ws/internal/tibber"
 
-	"github.com/joho/godotenv"
 )
 
 // Collector is de real-time data collector
-func Collector(ctx context.Context) {
+func Collector(ctx context.Context, dbConn *sql.DB) {
 	log.Printf("Starting real-time collector...")
 
-	// Laad .env bestand
-	if err := godotenv.Load("./.env"); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-	log.Printf("Loaded .env file")
 
 	// Haal database URL op
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL environment variable is not set")
-	}
-	log.Printf("Found DATABASE_URL")
 
-	// Parse database URL en maak verbinding
-	dbConfig, err := db.ParseURL(dbURL)
-	if err != nil {
-		log.Fatalf("Error parsing database URL: %v", err)
-	}
-
-	dbConn, err := db.NewConnection(dbConfig)
-	if err != nil {
-		log.Fatalf("Error connecting to database: %v", err)
-	}
-	defer dbConn.Close()
-	log.Printf("Connected to database")
 
 	// Initialiseer database schema
 	if err := db.InitSchema(dbConn); err != nil {
