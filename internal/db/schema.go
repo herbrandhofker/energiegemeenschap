@@ -5,142 +5,158 @@ import (
 	"fmt"
 )
 
-	// Drop existing tables in reverse dependency order
-	func InitDatabase(db *sql.DB) error {
-	//			`CREATE SCHEMA IF NOT EXISTS tibber`,
-	prepStmts:=[]string{	`INSERT INTO tibber.tibber_tokens(token) VALUES ('dfI9b14XZ0Rk5X8PODnCtCBSqCy2ZiqYoT5BAggMBV8') ON conflict DO NOTHING`	,}
-			// Create tables if they don't exist
+func InitDatabase(db *sql.DB) error {
+	// Create schema if it doesn't exist
+	_, err := db.Exec(`CREATE SCHEMA IF NOT EXISTS tibber`)
+	if err != nil {
+		return fmt.Errorf("error creating schema: %w", err)
+	}
 
 	// Create tables if they don't exist
 	createQueries := []string{
+		`CREATE TABLE IF NOT EXISTS tibber.tibber_tokens (
+			id SERIAL PRIMARY KEY,
+			token VARCHAR(255) NOT NULL,
+			active BOOLEAN DEFAULT true,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.owners (
 			id SERIAL PRIMARY KEY,
-			name VARCHAR(255) NOT NULL,
+			name VARCHAR(255),
 			first_name VARCHAR(255),
 			middle_name VARCHAR(255),
 			last_name VARCHAR(255),
-			-- Address fields
-			address_1 VARCHAR(255),
-			address_2 VARCHAR(255),
-			address_3 VARCHAR(255),
+			address_1 TEXT,
+			address_2 TEXT,
+			address_3 TEXT,
 			city VARCHAR(100),
 			postal_code VARCHAR(20),
-			country VARCHAR(50),
-			latitude VARCHAR(20),
-			longitude VARCHAR(20),
-			-- Contact info
-			email VARCHAR(255) NOT NULL UNIQUE,
+			country VARCHAR(100),
+			latitude FLOAT,
+			longitude FLOAT,
+			email VARCHAR(255) UNIQUE,
 			mobile VARCHAR(50),
-			-- Timestamps
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.homes (
-			id VARCHAR(50) PRIMARY KEY,
-			type VARCHAR(20),
+			id VARCHAR(255) PRIMARY KEY,
+			type VARCHAR(50),
 			size INTEGER,
-			app_nickname VARCHAR(100),
+			app_nickname VARCHAR(255),
 			app_avatar VARCHAR(255),
 			main_fuse_size INTEGER,
 			number_of_residents INTEGER,
 			time_zone VARCHAR(50),
-			-- Address fields
-			address_1 VARCHAR(255),
-			address_2 VARCHAR(255),
+			address_1 TEXT,
+			address_2 TEXT,
+			address_3 TEXT,
 			postal_code VARCHAR(20),
 			city VARCHAR(100),
-			country VARCHAR(50),
-			latitude VARCHAR(20),
-			longitude VARCHAR(20),
-			-- Metering point data
-			consumption_ean VARCHAR(50),
-			grid_company VARCHAR(100),
+			country VARCHAR(100),
+			latitude VARCHAR(50),
+			longitude VARCHAR(50),
+			consumption_ean VARCHAR(255),
+			grid_company VARCHAR(255),
 			grid_area_code VARCHAR(50),
 			price_area_code VARCHAR(50),
-			production_ean VARCHAR(50),
+			production_ean VARCHAR(255),
 			energy_tax_type VARCHAR(50),
-			vat_type VARCHAR(20),
-			estimated_annual_consumption DECIMAL(10,2),
-			-- Features
-			real_time_consumption_enabled BOOLEAN,
-			-- Owner reference
-			owner_id INTEGER REFERENCES owners(id),
-			-- Timestamps
+			vat_type VARCHAR(50),
+			estimated_annual_consumption FLOAT,
+			real_time_consumption_enabled BOOLEAN DEFAULT false,
+			owner_id INTEGER REFERENCES tibber.owners(id),
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS tibber.prices (
+			id SERIAL PRIMARY KEY,
+			home_id VARCHAR(255) REFERENCES tibber.homes(id),
+			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+			total_price DECIMAL(10,4) NOT NULL,
+			energy_price DECIMAL(10,4) NOT NULL,
+			tax_price DECIMAL(10,4) NOT NULL,
+			currency VARCHAR(10) NOT NULL,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(home_id, timestamp)
+		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.consumption (
-			home_id VARCHAR(50),
+			id SERIAL PRIMARY KEY,
+			home_id VARCHAR(255) REFERENCES tibber.homes(id),
 			from_time TIMESTAMP WITH TIME ZONE,
 			to_time TIMESTAMP WITH TIME ZONE,
-			consumption DECIMAL(10,2),
-			cost DECIMAL(10,2),
-			currency TEXT,
+			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+			consumption DECIMAL(10,4) NOT NULL,
+			unit VARCHAR(10) NOT NULL,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (home_id, from_time),
-			FOREIGN KEY (home_id) REFERENCES homes(id)
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(home_id, timestamp)
 		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.production (
-			home_id VARCHAR(50),
+			id SERIAL PRIMARY KEY,
+			home_id VARCHAR(255) REFERENCES tibber.homes(id),
 			from_time TIMESTAMP WITH TIME ZONE,
 			to_time TIMESTAMP WITH TIME ZONE,
-			production DECIMAL(10,2),
-			profit DECIMAL(10,2),
-			currency TEXT,
+			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+			production DECIMAL(10,4) NOT NULL,
+			profit DECIMAL(10,4),
+			currency VARCHAR(10),
+			unit VARCHAR(10),
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (home_id, from_time),
-			FOREIGN KEY (home_id) REFERENCES homes(id)
-		)`,
-		`CREATE TABLE IF NOT EXISTS tibber.prices (
-			home_id VARCHAR(50),
-			price_date DATE,
-			hour_of_day INTEGER,
-			total DECIMAL(10,4),
-			energy DECIMAL(10,4),
-			tax DECIMAL(10,4),
-			currency TEXT,
-			level TEXT,
-			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (home_id, price_date, hour_of_day),
-			FOREIGN KEY (home_id) REFERENCES homes(id),
-			CHECK (hour_of_day >= 0 AND hour_of_day < 24)
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(home_id, timestamp)
 		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.real_time_measurements (
 			id SERIAL PRIMARY KEY,
-			home_id VARCHAR(50) NOT NULL,
+			home_id VARCHAR(255) REFERENCES tibber.homes(id),
 			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-			power DECIMAL(10,2) NOT NULL,
-			power_production DECIMAL(10,2) NOT NULL,
-			min_power DECIMAL(10,2),
-			average_power DECIMAL(10,2),
-			max_power DECIMAL(10,2),
-			max_power_production DECIMAL(10,2),
-			accumulated_consumption DECIMAL(10,2) NOT NULL,
-			accumulated_production DECIMAL(10,2) NOT NULL,
-			last_meter_consumption DECIMAL(10,2),
-			last_meter_production DECIMAL(10,2),
-			current_l1 DECIMAL(10,2),
-			current_l2 DECIMAL(10,2),
-			current_l3 DECIMAL(10,2),
-			voltage_phase1 DECIMAL(10,2),
-			voltage_phase2 DECIMAL(10,2),
-			voltage_phase3 DECIMAL(10,2),
+			power DECIMAL(10,4) NOT NULL,
+			min_power DECIMAL(10,4),
+			average_power DECIMAL(10,4),
+			max_power DECIMAL(10,4),
+			power_production DECIMAL(10,4),
+			max_power_production DECIMAL(10,4),
+			accumulated_consumption DECIMAL(10,4),
+			accumulated_production DECIMAL(10,4),
+			last_meter_consumption DECIMAL(10,4),
+			last_meter_production DECIMAL(10,4),
+			current_l1 DECIMAL(10,4),
+			current_l2 DECIMAL(10,4),
+			current_l3 DECIMAL(10,4),
+			voltage_phase1 DECIMAL(10,4),
+			voltage_phase2 DECIMAL(10,4),
+			voltage_phase3 DECIMAL(10,4),
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY (home_id) REFERENCES homes(id),
-			UNIQUE (home_id, timestamp)
+			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(home_id, timestamp)
 		)`,
-	}
-
-	for _, query := range prepStmts {
-		if _, err := db.Exec(query); err != nil {
-			return fmt.Errorf("error creating schema: %w", err)
-		}
 	}
 
 	// Execute create queries
 	for _, query := range createQueries {
 		if _, err := db.Exec(query); err != nil {
-			return fmt.Errorf("error creating schema: %w", err)
+			return fmt.Errorf("error creating table: %w", err)
+		}
+	}
+
+	// Create indexes
+	indexQueries := []string{
+		`CREATE INDEX IF NOT EXISTS idx_prices_home_id ON tibber.prices(home_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_prices_timestamp ON tibber.prices(timestamp)`,
+		`CREATE INDEX IF NOT EXISTS idx_consumption_home_id ON tibber.consumption(home_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_consumption_timestamp ON tibber.consumption(timestamp)`,
+		`CREATE INDEX IF NOT EXISTS idx_production_home_id ON tibber.production(home_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_production_timestamp ON tibber.production(timestamp)`,
+		`CREATE INDEX IF NOT EXISTS idx_real_time_measurements_home_id ON tibber.real_time_measurements(home_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_real_time_measurements_timestamp ON tibber.real_time_measurements(timestamp)`,
+	}
+
+	// Execute index queries
+	for _, query := range indexQueries {
+		if _, err := db.Exec(query); err != nil {
+			return fmt.Errorf("error creating index: %w", err)
 		}
 	}
 
