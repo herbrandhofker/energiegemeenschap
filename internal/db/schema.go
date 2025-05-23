@@ -73,14 +73,16 @@ func InitDatabase(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS tibber.prices (
 			id SERIAL PRIMARY KEY,
 			home_id VARCHAR(255) REFERENCES tibber.homes(id),
-			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-			total_price DECIMAL(10,4) NOT NULL,
-			energy_price DECIMAL(10,4) NOT NULL,
-			tax_price DECIMAL(10,4) NOT NULL,
+			price_date DATE NOT NULL,
+			hour_of_day INTEGER NOT NULL,
+			total DECIMAL(10,4) NOT NULL,
+			energy DECIMAL(10,4) NOT NULL,
+			tax DECIMAL(10,4) NOT NULL,
 			currency VARCHAR(10) NOT NULL,
+			level VARCHAR(50),
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(home_id, timestamp)
+			UNIQUE(home_id, price_date, hour_of_day)
 		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.consumption (
 			id SERIAL PRIMARY KEY,
@@ -89,10 +91,12 @@ func InitDatabase(db *sql.DB) error {
 			to_time TIMESTAMP WITH TIME ZONE,
 			timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
 			consumption DECIMAL(10,4) NOT NULL,
+			cost DECIMAL(10,4),
+			currency VARCHAR(10),
 			unit VARCHAR(10) NOT NULL,
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(home_id, timestamp)
+			UNIQUE(home_id, from_time)
 		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.production (
 			id SERIAL PRIMARY KEY,
@@ -106,7 +110,7 @@ func InitDatabase(db *sql.DB) error {
 			unit VARCHAR(10),
 			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE(home_id, timestamp)
+			UNIQUE(home_id, from_time)
 		)`,
 		`CREATE TABLE IF NOT EXISTS tibber.real_time_measurements (
 			id SERIAL PRIMARY KEY,
@@ -144,11 +148,11 @@ func InitDatabase(db *sql.DB) error {
 	// Create indexes
 	indexQueries := []string{
 		`CREATE INDEX IF NOT EXISTS idx_prices_home_id ON tibber.prices(home_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_prices_timestamp ON tibber.prices(timestamp)`,
+		`CREATE INDEX IF NOT EXISTS idx_prices_date ON tibber.prices(price_date)`,
 		`CREATE INDEX IF NOT EXISTS idx_consumption_home_id ON tibber.consumption(home_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_consumption_timestamp ON tibber.consumption(timestamp)`,
+		`CREATE INDEX IF NOT EXISTS idx_consumption_from_time ON tibber.consumption(from_time)`,
 		`CREATE INDEX IF NOT EXISTS idx_production_home_id ON tibber.production(home_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_production_timestamp ON tibber.production(timestamp)`,
+		`CREATE INDEX IF NOT EXISTS idx_production_from_time ON tibber.production(from_time)`,
 		`CREATE INDEX IF NOT EXISTS idx_real_time_measurements_home_id ON tibber.real_time_measurements(home_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_real_time_measurements_timestamp ON tibber.real_time_measurements(timestamp)`,
 	}

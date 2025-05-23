@@ -69,8 +69,8 @@ func (s *ConsumptionService) GetConsumption(ctx context.Context, homeId string, 
 
 	// Prepare the insert statement
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO consumption (home_id, from_time, to_time, consumption, cost, currency)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO consumption (home_id, from_time, to_time, timestamp, consumption, cost, currency, unit)
+		VALUES ($1, $2, $3, $2, $4, $5, $6, $7)
 		ON CONFLICT (home_id, from_time) DO NOTHING
 	`)
 	if err != nil {
@@ -122,6 +122,7 @@ func (s *ConsumptionService) GetConsumption(ctx context.Context, homeId string, 
 			consumption.Consumption,
 			consumption.Cost,
 			consumption.Currency,
+			consumption.ConsumptionUnit,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert consumption data: %w", err)

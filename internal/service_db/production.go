@@ -69,8 +69,8 @@ func (s *ProductionService) GetProduction(ctx context.Context, homeId string, re
 
 	// Prepare the insert statement
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO production (home_id, from_time, to_time, production, profit, currency)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO production (home_id, from_time, to_time, timestamp, production, profit, currency, unit)
+		VALUES ($1, $2, $3, $2, $4, $5, $6, $7)
 		ON CONFLICT (home_id, from_time) DO NOTHING
 	`)
 	if err != nil {
@@ -122,6 +122,7 @@ func (s *ProductionService) GetProduction(ctx context.Context, homeId string, re
 			production.Production,
 			production.Profit,
 			production.Currency,
+			production.ProductionUnit,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert production data: %w", err)
