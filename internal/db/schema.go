@@ -164,5 +164,38 @@ func InitDatabase(db *sql.DB) error {
 		}
 	}
 
+	// Create trigger function for token changes
+	_, err = db.Exec(`
+		CREATE OR REPLACE FUNCTION tibber.notify_token_changes()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			PERFORM pg_notify(
+				'token_changes',
+				json_build_object(
+					'action', TG_OP,
+					'token_id', NEW.id,
+					'active', NEW.active
+				)::text
+			);
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql;
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating trigger function: %w", err)
+	}
+
+	// Create trigger for token changes
+	_, err = db.Exec(`
+		DROP TRIGGER IF EXISTS token_changes_trigger ON tibber.tibber_tokens;
+		CREATE TRIGGER token_changes_trigger
+			AFTER INSERT OR UPDATE ON tibber.tibber_tokens
+			FOR EACH ROW
+			EXECUTE FUNCTION tibber.notify_token_changes();
+	`)
+	if err != nil {
+		return fmt.Errorf("error creating trigger: %w", err)
+	}
+
 	return nil
 }
