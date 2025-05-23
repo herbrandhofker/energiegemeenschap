@@ -1,237 +1,38 @@
-# Energy Dashboard
+# Tibber Loader
 
-Een dashboard voor het monitoren van energieverbruik en -productie.
+Een applicatie voor het laden van energieverbruik en -productie data van de Tibber API.
 
 ## Installatie
 
 1. Installeer de benodigde dependencies:
 ```bash
-npm install
+go mod download
 ```
 
-2. Start de CSS build in watch mode:
+## Configuratie
+
+Configureer je Tibber API gegevens via environment variables:
 ```bash
-npm run build:css
-```
-
-3. Start de Go server:
-```bash
-go run cmd/webserver/main.go
-```
-
-## Ontwikkeling
-
-- De CSS wordt automatisch gecompileerd wanneer er wijzigingen zijn in `web/static/css/styles.css`
-- De gecompileerde CSS wordt opgeslagen in `web/static/css/output.css`
-- Tailwind configuratie staat in `tailwind.config.js`
-
-## Project Structuur
-
-```
-ws_web/
-├── cmd/
-│   └── webserver/        # Go server code
-├── web/
-│   ├── static/
-│   │   └── css/         # CSS bestanden
-│   └── templates/       # HTML templates
-├── package.json         # NPM dependencies
-├── tailwind.config.js   # Tailwind configuratie
-└── README.md           # Deze file
-```
-
-# gotibber
-Query the tibber GraphQL API in a request/response fashion or setup a websocket connection to consume live measurements.
-
-Websocket/streaming data requires a meter like the Tibber Pulse or Watty connected to the serial port (P1-port) of your powermeter. This repo uses the `graphql-transport-ws` sub-protocol for handling the subscription. 
-
-## env
-Provide your tibber details trough e.g. environment variables 
-```zsh
 export TIBBER_API_TOKEN=<REDACTED>
-export TIBBER_HOUSE_ID=<REDACTED>
+export DATABASE_URL=<REDACTED>
 ```
 
-## example usage
-Verify functionality by setting aforementioned environment variables and then run `go run .` in the `examples/`-directory
+## Database Structuur
 
-### query user
-```go
-func QueryUserExample() {
-
-	ctx := context.Background()
-
-	t := tibber.Client{
-		APIClient: tibber.NewAPIClient(&tibber.APIConfig{
-			Token: os.Getenv("TIBBER_API_TOKEN"),
-			URL:   "https://api.tibber.com/v1-beta/gql",
-		}),
-		Logger: slog.Default(),
-	}
-
-	u := t.QueryUser(ctx, &tibber.User{})
-
-	fmt.Printf("User: %v\n", u.Viewer.Name)
-}
-```
-
-### query consumption
-
-```go
-func QueryConsumptionExample() {
-	ctx := context.Background()
-
-	t := tibber.Client{
-		APIClient: tibber.NewAPIClient(&tibber.APIConfig{
-			Token: os.Getenv("TIBBER_API_TOKEN"),
-			URL:   "https://api.tibber.com/v1-beta/gql",
-		}),
-		Logger: slog.Default(),
-	}
-
-	c := t.QueryConsumption(ctx, &tibber.Consumption{
-		Id:         os.Getenv("TIBBER_HOUSE_ID"),
-		Resolution: "HOURLY",
-		Last:       5,
-	})
-
-	fmt.Printf("Consumption: %v\n", c.Viewer.Homes)
-}
-```
-
-### setup websocket
-
-```go
-func setupWebsocket() {
-	// terminate listens for SIGINT and SIGTERM signals from the OS
-	terminate := make(chan os.Signal, 1)
-	signal.Notify(terminate, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
-	ctx, cancelFunc := context.WithCancel(context.Background())
-
-	t := tibber.Client{
-		APIClient: tibber.NewAPIClient(&tibber.APIConfig{
-			Token: os.Getenv("TIBBER_API_TOKEN"),
-			URL:   "https://api.tibber.com/v1-beta/gql",
-		}),
-		Logger: slog.Default(),
-		WebsocketClient: &tibber.WebsocketClient{
-			Config: tibber.NewWebsocketConfig(&tibber.WebsocketConfig{
-				Token: os.Getenv("TIBBER_API_TOKEN"),
-				Host:  "websocket-api.tibber.com",
-				Path:  "/v1-beta/gql/subscriptions",
-				Id:    os.Getenv("TIBBER_HOUSE_ID"),
-			}),
-			Data: make(chan tibber.LiveMeasurement),
-		},
-		Wg: &sync.WaitGroup{},
-	}
-
-	t.Wg.Add(1)
-	go t.Subscribe(ctx)
-
-	go func() {
-		for {
-			select {
-			case liveMeasurement := <-t.WebsocketClient.Data:
-				fmt.Printf(
-					"New measurement: %v, %v W\n", 
-					*liveMeasurement.Timestamp, *liveMeasurement.Power,
-					)
-			case <-ctx.Done():
-				fmt.Println("Done!")
-				return
-			}
-		}
-	}()
-
-	<-terminate //block until terminate is closed
-	fmt.Println("*********************************\nShutdown signal received\n*********************************")
-	cancelFunc()
-	t.Wg.Wait()
-	fmt.Println("All done!")
-}
-
-```
-
-yields e.g.
-
-```shell
-New measurement: 2024-01-17 22:21:35 +0100 CET, 2834 W
-New measurement: 2024-01-17 22:21:40 +0100 CET, 2835 W
-New measurement: 2024-01-17 22:21:45 +0100 CET, 2839 W
-New measurement: 2024-01-17 22:21:50 +0100 CET, 2841 W
-New measurement: 2024-01-17 22:21:55 +0100 CET, 2842 W
-```
-
-
-subscription{
-  liveMeasurement(homeId:"Deine Home-ID"){
-    timestamp
-    power
-    powerProduction
-    minPower
-    averagePower
-    maxPower
-    maxPowerProduction
-    currentL1
-    currentL2
-    currentL3
-    voltagePhase1
-    voltagePhase2
-    voltagePhase3
-    accumulatedConsumption
-    accumulatedProduction
-    lastMeterConsumption
-    lastMeterProduction 
-  }
-}
-
-{
-  viewer {
-    homes {
-      id
-      address {
-        address1
-        postalCode
-        city
-        country
-        latitude
-        longitude
-      }
-      consumption(resolution: HOURLY, last: 48) {
-        nodes {
-          from
-          to
-          cost
-          unitPrice
-          unitPriceVAT
-          consumption
-        }
-      }
-    }
-  }
-}
-
-# Tibber Data Collector
-
-## Database Structure
-
-The application uses PostgreSQL with the following structure:
+De applicatie gebruikt PostgreSQL met de volgende structuur:
 
 ```
 energiegemeenschap (database)
 └── tibber (schema)
-    ├── owners
+    ├── tibber_tokens
     │   ├── id (SERIAL PRIMARY KEY)
-    │   ├── name (VARCHAR(255))
-    │   ├── email (VARCHAR(255))
+    │   ├── token (VARCHAR(255))
+    │   ├── active (BOOLEAN DEFAULT true)
     │   ├── created_at (TIMESTAMP)
     │   └── updated_at (TIMESTAMP)
     │
     ├── homes
     │   ├── id (VARCHAR(255) PRIMARY KEY)
-    │   ├── owner_id (INTEGER REFERENCES owners)
     │   ├── name (VARCHAR(255))
     │   ├── address (VARCHAR(255))
     │   ├── has_production_capability (BOOLEAN)
@@ -279,4 +80,114 @@ energiegemeenschap (database)
         └── updated_at (TIMESTAMP)
 ```
 
-All tables are created in the `tibber` schema within the `energiegemeenschap` database. The database uses the Europe/Amsterdam timezone.
+## Trigger Implementatie
+
+De applicatie gebruikt PostgreSQL triggers om wijzigingen in de `tibber_tokens` tabel te monitoren. Hier is de implementatie:
+
+```sql
+-- Functie die wordt aangeroepen bij wijzigingen in tibber_tokens
+CREATE OR REPLACE FUNCTION tibber.notify_token_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Stuur een NOTIFY met de actie en token ID
+    PERFORM pg_notify(
+        'token_changes',
+        json_build_object(
+            'action', TG_OP,
+            'token_id', NEW.id,
+            'active', NEW.active
+        )::text
+    );
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger voor INSERT en UPDATE
+CREATE TRIGGER token_changes_trigger
+    AFTER INSERT OR UPDATE ON tibber.tibber_tokens
+    FOR EACH ROW
+    EXECUTE FUNCTION tibber.notify_token_changes();
+```
+
+De applicatie luistert naar deze notificaties met:
+
+```go
+// Voorbeeld Go code voor het luisteren naar notificaties
+func listenForTokenChanges(db *sql.DB) {
+    listener := pq.NewListener(connStr, 10*time.Second, time.Minute, nil)
+    err := listener.Listen("token_changes")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for {
+        select {
+        case notification := <-listener.Notify:
+            var event struct {
+                Action  string `json:"action"`
+                TokenID int    `json:"token_id"`
+                Active  bool   `json:"active"`
+            }
+            json.Unmarshal([]byte(notification.Extra), &event)
+            
+            switch event.Action {
+            case "INSERT":
+                if event.Active {
+                    startDataCollection(event.TokenID)
+                }
+            case "UPDATE":
+                if event.Active {
+                    startDataCollection(event.TokenID)
+                } else {
+                    stopDataCollection(event.TokenID)
+                }
+            }
+        case <-time.After(90 * time.Second):
+            // Check connection
+            if err := listener.Ping(); err != nil {
+                log.Printf("Listener connection lost: %v", err)
+            }
+        }
+    }
+}
+```
+
+## Proces Beschrijving
+
+Het data laden proces werkt als volgt:
+
+1. **Token Monitoring**
+   - De applicatie monitort de `tibber_tokens` tabel via PostgreSQL triggers
+   - Bij elke INSERT of UPDATE wordt een notificatie gestuurd
+   - Alleen tokens met `active = true` worden gebruikt voor data laden
+
+2. **Home Data Laden**
+   - Wanneer een nieuw actief token wordt toegevoegd:
+     - Verbinding maken met Tibber API met het nieuwe token
+     - Ophalen van alle homes gekoppeld aan het token
+     - Homes worden opgeslagen in de `homes` tabel
+
+3. **Metingen Laden**
+   - Voor elk opgehaald home:
+     - Start het laden van real-time metingen
+     - Start het laden van historische consumptie data
+     - Start het laden van historische productie data (indien beschikbaar)
+     - Start het laden van prijsinformatie
+
+4. **Proces Controle**
+   - Het laden kan worden gestopt door `active = false` te zetten voor een token
+   - Het laden wordt automatisch hervat wanneer `active = true` wordt gezet
+   - Bij het deactiveren van een token worden alle lopende metingen voor dat token gestopt
+
+## Gebruik
+
+De applicatie kan worden uitgevoerd met:
+
+```bash
+go run cmd/collector/main.go
+```
+
+Dit zal:
+1. Starten met monitoren van de `tibber_tokens` tabel via PostgreSQL triggers
+2. Automatisch data laden voor alle actieve tokens
+3. De data opslaan in de PostgreSQL database

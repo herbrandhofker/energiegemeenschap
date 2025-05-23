@@ -69,7 +69,7 @@ func (c *TibberClient) QueryAPI(ctx context.Context, query string, variables map
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("API request failed with status %d", resp.StatusCode)
 	}
 
 	// Parse the response
