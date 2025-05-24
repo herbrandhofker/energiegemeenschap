@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"ws/internal/client"
-	"ws/internal/model"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/model"
 )
 
 // HomeService handles home-related operations

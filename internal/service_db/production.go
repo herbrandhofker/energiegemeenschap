@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"ws/internal/client"
-	"ws/internal/model"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/model"
 )
 
 // ProductionService handles production-related operations
@@ -69,9 +69,9 @@ func (s *ProductionService) GetProduction(ctx context.Context, homeId string, re
 
 	// Prepare the insert statement
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO production (home_id, from_date, to_time, production, profit, currency)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (home_id, from_date) DO NOTHING
+		INSERT INTO production (home_id, from_time, to_time, timestamp, production, profit, currency, unit)
+		VALUES ($1, $2, $3, $2, $4, $5, $6, $7)
+		ON CONFLICT (home_id, from_time) DO NOTHING
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare statement: %w", err)
@@ -114,14 +114,15 @@ func (s *ProductionService) GetProduction(ctx context.Context, homeId string, re
 		// Add to home's production list
 		home.Production = append(home.Production, production)
 
-		// Store in database - note we now use fromTime.Truncate(24*time.Hour) to get just the date
+		// Store in database
 		_, err = stmt.ExecContext(ctx,
 			homeId,
-			fromTime.Truncate(24*time.Hour),
+			fromTime,
 			toTime,
 			production.Production,
 			production.Profit,
 			production.Currency,
+			production.ProductionUnit,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert production data: %w", err)
@@ -162,11 +163,11 @@ func (s *ProductionService) GetDailySummary(ctx context.Context, homeId string, 
 // getDailySummaryFromDB retrieves production summary from the database
 func (s *ProductionService) getDailySummaryFromDB(ctx context.Context, homeId string, days int) ([]model.ProductionSummary, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT from_date, to_time, production, profit, currency
+		SELECT from_time, to_time, production, profit, currency
 		FROM production
 		WHERE home_id = $1
-		AND from_date >= CURRENT_DATE - INTERVAL '1 day' * $2
-		ORDER BY from_date DESC
+		AND from_time >= CURRENT_DATE - INTERVAL '1 day' * $2
+		ORDER BY from_time DESC
 	`, homeId, days)
 	if err != nil {
 		return nil, err
@@ -176,13 +177,13 @@ func (s *ProductionService) getDailySummaryFromDB(ctx context.Context, homeId st
 	var summaries []model.ProductionSummary
 	for rows.Next() {
 		var summary model.ProductionSummary
-		var fromDate time.Time
+		var fromTime time.Time
 		var toTime time.Time
-		err := rows.Scan(&fromDate, &toTime, &summary.Production, &summary.Profit, &summary.Currency)
+		err := rows.Scan(&fromTime, &toTime, &summary.Production, &summary.Profit, &summary.Currency)
 		if err != nil {
 			return nil, err
 		}
-		summary.From = fromDate.Format(time.RFC3339)
+		summary.From = fromTime.Format(time.RFC3339)
 		summary.To = toTime.Format(time.RFC3339)
 		summaries = append(summaries, summary)
 	}

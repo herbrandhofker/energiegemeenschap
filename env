@@ -1,0 +1,9 @@
+TIBBER_API_TOKEN=dfI9b14XZ0Rk5X8PODnCtCBSqCy2ZiqYoT5BAggMBV8
+TIBBER_API_ENDPOINT=https://api.tibber.com/v1-beta/gql
+PORT=8080
+TIBBER_HOUSE_ID=649afb01-67d5-4fef-93a7-4b84ceccea11
+TITLE=Enlightened Electricity Management
+COPYRIGHT=Enlightened Services © 2025
+#DATABASE_URL=postgresql://tibber:tibber@192.168.178.29:5433/energiegemeenschap
+
+DATABASE_URL=postgresql://tibber:tibber@45.138.54.143:5433/energiegemeenschap?sslmode=disable
