@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"ws/internal/client"
-	"ws/internal/model"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/model"
 )
 
 // ConsumptionService handles consumption-related operations

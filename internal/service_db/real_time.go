@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"ws/internal/tibber"
+	"tibber_loader/internal/tibber"
 )
 
 // RealTimeService handles real-time measurement operations

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"ws/internal/client"
-	"ws/internal/model"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/model"
 )
 
 // ProductionService handles production-related operations
@@ -67,7 +67,6 @@ func (s *ProductionService) GetProduction(ctx context.Context, homeId string, re
 		// Parse time values
 		fromStr := client.GetString(nodeData, "from")
 		toStr := client.GetString(nodeData, "to")
-
 
 		// Create production entry
 		production := model.Production{

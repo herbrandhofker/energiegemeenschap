@@ -1,4 +1,4 @@
-module ws
+module tibber_loader 
 
 go 1.24.2
 

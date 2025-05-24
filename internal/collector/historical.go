@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
-	"ws/internal/client"
-	"ws/internal/db"
-	"ws/internal/model"
-	"ws/internal/service_db"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/db"
+	"tibber_loader/internal/model"
+	"tibber_loader/internal/service_db"
 
 	"github.com/joho/godotenv"
 )

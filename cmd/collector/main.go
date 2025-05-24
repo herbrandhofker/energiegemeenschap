@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"ws/internal/collector"
-	"ws/internal/db"
+	"tibber_loader/internal/collector"
+	"tibber_loader/internal/db"
 
 	"github.com/joho/godotenv"
 )
@@ -47,7 +47,7 @@ func main() {
 	}
 	defer dbConn.Close()
 	log.Printf("Connected to database")
-	go collector.Collector(ctx,dbConn)
+	go collector.Collector(ctx, dbConn)
 	// Wait for shutdown signal
 	<-sigChan
 	cancel()

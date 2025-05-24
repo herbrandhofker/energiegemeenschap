@@ -9,12 +9,13 @@ import (
 	"sync"
 	"time"
 
-	"ws/internal/client"
-	"ws/internal/db"
-	"ws/internal/model"
-	"ws/internal/service_db"
-	"ws/internal/tibber"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/db"
+	"tibber_loader/internal/model"
+	"tibber_loader/internal/service_db"
+	"tibber_loader/internal/tibber"
 
+	"github.com/joho/godotenv"
 	"github.com/lib/pq"
 )
 
@@ -33,6 +34,11 @@ type TokenChangeEvent struct {
 
 // listenForTokenChanges listens for changes in the tibber_tokens table
 func listenForTokenChanges(ctx context.Context, dbConn *sql.DB) {
+	// Load env file
+	if err := godotenv.Load("env"); err != nil {
+		log.Printf("Warning: env file not found: %v", err)
+	}
+
 	// Create a new listener
 	listener := pq.NewListener(os.Getenv("DATABASE_URL"), 10*time.Second, time.Minute, nil)
 	err := listener.Listen("token_changes")
@@ -226,7 +232,7 @@ func startHomeCollector(
 	ctx context.Context,
 	homeID string,
 	wsClient *tibber.Client,
-	apiClient *client.Client,
+	apiClient *client.TibberClient,
 	priceService *service_db.PriceService,
 	consumptionService *service_db.ConsumptionService,
 	productionService *service_db.ProductionService,

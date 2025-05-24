@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"ws/internal/client"
-	"ws/internal/model"
+	"tibber_loader/internal/client"
+	"tibber_loader/internal/model"
 )
 
 // PriceService handles price information operations
@@ -156,7 +156,7 @@ func (s *PriceService) FindLowestPriceHour(ctx context.Context, homeId string, i
 func parsePriceEntry(entryData map[string]interface{}) model.Price {
 	// Parse time values
 	startsAtStr := client.GetString(entryData, "startsAt")
-	
+
 	return model.Price{
 		Total:     getFloat64(entryData, "total"),
 		Energy:    getFloat64(entryData, "energy"),
