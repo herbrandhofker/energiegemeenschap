@@ -1,19 +1,6 @@
 package model
 
-import (
-	"time"
-)
-
-// User represents a Tibber user with associated data
-type User struct {
-	ID          string    `json:"userId"`
-	Name        string    `json:"name"`
-	Email       string    `json:"login"`
-	AccountType string    `json:"accountType"`
-	LastLogin   time.Time `json:"lastLogin"`
-	Homes       []Home    `json:"homes"`
-	APIToken    string    `json:"-"` // Don't include this in JSON responses
-}
+//
 
 // Owner represents the owner of a home in the Tibber system
 type Owner struct {
@@ -181,28 +168,28 @@ func (p *Production) ToSummary() ProductionSummary {
 
 // Measurement represents live power measurement data from Tibber
 type Measurement struct {
-	Timestamp              time.Time `json:"timestamp"`
-	Power                  float64   `json:"power"`
-	PowerProduction        float64   `json:"powerProduction"`
-	MinPower               float64   `json:"minPower"`
-	AveragePower           float64   `json:"averagePower"`
-	MaxPower               float64   `json:"maxPower"`
-	MaxPowerProduction     float64   `json:"maxPowerProduction"`
-	CurrentL1              *float64  `json:"currentL1,omitempty"`
-	CurrentL2              *float64  `json:"currentL2,omitempty"`
-	CurrentL3              *float64  `json:"currentL3,omitempty"`
-	VoltagePhase1          *float64  `json:"voltagePhase1,omitempty"`
-	VoltagePhase2          *float64  `json:"voltagePhase2,omitempty"`
-	VoltagePhase3          *float64  `json:"voltagePhase3,omitempty"`
-	AccumulatedConsumption float64   `json:"accumulatedConsumption"`
-	AccumulatedProduction  float64   `json:"accumulatedProduction"`
-	LastMeterConsumption   float64   `json:"lastMeterConsumption"`
-	LastMeterProduction    float64   `json:"lastMeterProduction"`
+	Timestamp              string   `json:"timestamp"` // ISO 8601 format
+	Power                  float64  `json:"power"`
+	PowerProduction        float64  `json:"powerProduction"`
+	MinPower               float64  `json:"minPower"`
+	AveragePower           float64  `json:"averagePower"`
+	MaxPower               float64  `json:"maxPower"`
+	MaxPowerProduction     float64  `json:"maxPowerProduction"`
+	CurrentL1              *float64 `json:"currentL1,omitempty"`
+	CurrentL2              *float64 `json:"currentL2,omitempty"`
+	CurrentL3              *float64 `json:"currentL3,omitempty"`
+	VoltagePhase1          *float64 `json:"voltagePhase1,omitempty"`
+	VoltagePhase2          *float64 `json:"voltagePhase2,omitempty"`
+	VoltagePhase3          *float64 `json:"voltagePhase3,omitempty"`
+	AccumulatedConsumption float64  `json:"accumulatedConsumption"`
+	AccumulatedProduction  float64  `json:"accumulatedProduction"`
+	LastMeterConsumption   float64  `json:"lastMeterConsumption"`
+	LastMeterProduction    float64  `json:"lastMeterProduction"`
 }
 
 // MeasurementSummary provides a simpler view of measurement data
 type MeasurementSummary struct {
-	Timestamp   time.Time
+	Timestamp   string `json:"timestamp"` // ISO 8601 format
 	Power       float64
 	IsProducing bool
 	Production  float64

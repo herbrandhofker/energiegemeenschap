@@ -156,3 +156,25 @@ func (s *RealTimeService) CleanupOldMeasurements(ctx context.Context, olderThan 
 
 	return nil
 }
+
+// internal/service_db/real_time.go
+type RealTimeService struct {
+	DB *TimeConverter
+}
+
+func NewRealTimeService(db *sql.DB) *RealTimeService {
+	return &RealTimeService{
+			DB: NewTimeConverter(db),
+	}
+}
+
+// StoreMeasurement gebruikt nu automatisch de juiste timestamp formaten
+func (s *RealTimeService) StoreMeasurement(ctx context.Context, homeID string, measurement Measurement) error {
+	// De middleware zorgt automatisch voor de juiste conversie
+	_, err := s.DB.Exec(`
+			INSERT INTO real_time_measurements (
+					home_id, timestamp, power, ...
+			) VALUES ($1, $2, $3, ...)
+	`, homeID, measurement.Timestamp, measurement.Power, ...)
+	return err
+}
