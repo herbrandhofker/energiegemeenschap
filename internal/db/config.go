@@ -37,8 +37,8 @@ func NewConnection(config *Config) (*sql.DB, error) {
 
 // ParseURL parses a PostgreSQL URL into a Config struct
 func ParseURL(url string) (*Config, error) {
-	// Expected format: postgresql://username:password@host:port/dbname
-	// or: postgresql://username:password@host/dbname (default port 5432)
+	// Expected format: postgresql://username:password@host:port/dbname?param=value
+	// or: postgresql://username:password@host/dbname?param=value (default port 5432)
 
 	// Remove postgresql:// prefix if present
 	url = strings.TrimPrefix(url, "postgresql://")
@@ -74,12 +74,19 @@ func ParseURL(url string) (*Config, error) {
 		}
 	}
 
+	// Parse database name and query parameters
+	dbName := hostParts[1]
+	if strings.Contains(dbName, "?") {
+		dbParts := strings.Split(dbName, "?")
+		dbName = dbParts[0]
+	}
+
 	config := &Config{
 		Host:     host,
 		Port:     port,
 		User:     username,
 		Password: password,
-		DBName:   hostParts[1],
+		DBName:   dbName,
 	}
 
 	return config, nil
